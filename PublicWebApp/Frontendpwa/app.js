@@ -1,8 +1,11 @@
-// ============= LAKO STREET FOOD APP =============
-// Developed by: Kyle Brian M. Morillo & Alexander Collin Millicamp
+// ============= LAKO CUSTOMER APP =============
+// Capstone Project: Asian Institute of Technology and Education
+// Project: Lako: Passive GPS Proximity Discovery of Micro Retail Vendors
+// Location: Quipot to Poblacion 1-4, Tiaong, Quezon
+// Developers: Kyle Brian M. Morillo & Alexander Collin Millicamp
 // Headquarters: 196 Bula, Tiaong, Quezon, Philippines 4325
 
-class LakoStreetFoodApp {
+class LakoCustomerApp {
     constructor() {
         this.currentUser = null;
         this.deviceId = this.getDeviceId();
@@ -96,9 +99,9 @@ class LakoStreetFoodApp {
         if (metaThemeColor) {
             const colors = {
                 orange: '#e67e22',
-                red: '#e74c3c',
-                green: '#2ecc71',
-                brown: '#8B4513'
+                green: '#28a745',
+                blue: '#007bff',
+                red: '#dc3545'
             };
             metaThemeColor.setAttribute('content', colors[theme] || '#e67e22');
         }
@@ -109,7 +112,6 @@ class LakoStreetFoodApp {
         }
     }
     
-    // ============= EULA =============
     async checkEULA() {
         try {
             const response = await fetch('/api/eula/check', {
@@ -120,17 +122,18 @@ class LakoStreetFoodApp {
             const data = await response.json();
             
             if (!data.accepted) {
-                document.getElementById('eula-text').innerHTML = data.eula_text.replace(/\n/g, '<br>');
-                document.getElementById('eula-modal').classList.remove('hidden');
+                const eulaHtml = data.eula_text.replace(/\n/g, '<br>');
+                document.getElementById('eula-text').innerHTML = eulaHtml;
+                document.getElementById('eula-modal').style.display = 'flex';
                 
                 document.getElementById('accept-eula').onclick = () => this.acceptEULA(data.device_id);
                 document.getElementById('decline-eula').onclick = () => this.declineEULA();
             } else {
-                this.showSplash();
+                this.splashScreen();
             }
         } catch (error) {
             console.error('EULA check failed:', error);
-            this.showSplash();
+            this.splashScreen();
         }
     }
     
@@ -141,8 +144,8 @@ class LakoStreetFoodApp {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ device_id: deviceId })
             });
-            document.getElementById('eula-modal').classList.add('hidden');
-            this.showSplash();
+            document.getElementById('eula-modal').style.display = 'none';
+            this.splashScreen();
         } catch (error) {
             console.error('EULA accept failed:', error);
         }
@@ -153,19 +156,6 @@ class LakoStreetFoodApp {
     }
     
     splashScreen() {
-        setTimeout(() => {
-            const userId = localStorage.getItem('lako_user_id');
-            if (userId) {
-                this.loadUser(userId);
-            } else {
-                this.showLanding();
-            }
-        }, 2000);
-    }
-    
-    showSplash() {
-        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-        document.getElementById('splash').classList.remove('hidden');
         setTimeout(() => {
             const userId = localStorage.getItem('lako_user_id');
             if (userId) {
@@ -203,10 +193,12 @@ class LakoStreetFoodApp {
     }
     
     setupEventListeners() {
+        // Navigation
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
         });
         
+        // Auth buttons
         document.getElementById('login-btn')?.addEventListener('click', () => this.showLogin());
         document.getElementById('signup-btn')?.addEventListener('click', () => this.showRegister());
         document.getElementById('back-to-landing')?.addEventListener('click', () => this.showLanding());
@@ -214,6 +206,7 @@ class LakoStreetFoodApp {
         document.getElementById('back-to-login')?.addEventListener('click', () => this.showLogin());
         document.getElementById('forgot-link')?.addEventListener('click', () => this.showForgot());
         
+        // Forms
         document.getElementById('login-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.login();
@@ -229,12 +222,12 @@ class LakoStreetFoodApp {
             this.forgotPassword();
         });
         
+        // Main app buttons
         document.getElementById('fab-create-post')?.addEventListener('click', () => this.showCreatePostModal());
         document.getElementById('refresh-suggestions')?.addEventListener('click', () => this.loadSuggestions());
         document.getElementById('refresh-location')?.addEventListener('click', () => this.centerMap());
         document.getElementById('set-radius')?.addEventListener('click', () => this.showRadiusModal());
         document.getElementById('traffic-toggle')?.addEventListener('click', () => this.showTrafficAnalytics());
-        document.getElementById('map-filter')?.addEventListener('click', () => this.showMapFilters());
         document.getElementById('feed-filter-btn')?.addEventListener('click', () => this.showFeedFilters());
         document.getElementById('search-btn')?.addEventListener('click', () => this.search());
         document.getElementById('search-input')?.addEventListener('keypress', (e) => {
@@ -249,6 +242,7 @@ class LakoStreetFoodApp {
         document.getElementById('delete-account')?.addEventListener('click', () => this.deleteAccount());
         document.getElementById('logout-main')?.addEventListener('click', () => this.logout());
         
+        // Feed sorting
         document.querySelectorAll('.sort-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
@@ -261,6 +255,7 @@ class LakoStreetFoodApp {
             });
         });
         
+        // Search tabs
         document.querySelectorAll('.search-tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.search-tab-btn').forEach(b => b.classList.remove('active'));
@@ -270,16 +265,27 @@ class LakoStreetFoodApp {
             });
         });
         
+        // Filter modals
         document.getElementById('apply-feed-filters')?.addEventListener('click', () => this.applyFeedFilters());
         document.getElementById('clear-feed-filters')?.addEventListener('click', () => this.clearFeedFilters());
         document.getElementById('apply-map-filters')?.addEventListener('click', () => this.applyMapFilters());
         document.getElementById('clear-map-filters')?.addEventListener('click', () => this.clearMapFilters());
         document.getElementById('apply-radius')?.addEventListener('click', () => this.applyRadius());
         
+        // Preferences modal
         document.getElementById('save-preferences')?.addEventListener('click', () => this.savePreferences());
         document.getElementById('save-notifications')?.addEventListener('click', () => this.saveNotificationSettings());
         document.getElementById('save-privacy')?.addEventListener('click', () => this.savePrivacySettings());
         
+        // Radius slider
+        const radiusSlider = document.getElementById('radius-slider');
+        if (radiusSlider) {
+            radiusSlider.addEventListener('input', (e) => {
+                document.getElementById('radius-value').textContent = e.target.value;
+            });
+        }
+        
+        // Close modals
         document.querySelectorAll('.close-modal').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.getElementById('create-post-modal')?.classList.add('hidden');
@@ -294,6 +300,7 @@ class LakoStreetFoodApp {
             });
         });
         
+        // Create post form
         document.getElementById('create-post-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.createPost();
@@ -305,6 +312,7 @@ class LakoStreetFoodApp {
             document.getElementById('vendor-select-container').classList.toggle('hidden', !isReview);
         });
         
+        // Star rating
         document.querySelectorAll('.star-rating i').forEach(star => {
             star.addEventListener('click', () => {
                 const rating = star.dataset.rating;
@@ -319,24 +327,17 @@ class LakoStreetFoodApp {
             });
         });
         
+        // Add comment form
         document.getElementById('add-comment-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.addComment();
         });
-        
-        document.querySelectorAll('.theme-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.applyTheme(btn.dataset.theme);
-            });
-        });
     }
     
-    // ============= AUTHENTICATION (EMAIL ONLY) =============
     async login() {
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
         
-        // EMAIL ONLY - No phone number
         if (!email.endsWith('@gmail.com')) {
             alert('Only Gmail addresses are allowed');
             return;
@@ -369,7 +370,6 @@ class LakoStreetFoodApp {
         const email = document.getElementById('reg-email').value;
         const password = document.getElementById('reg-password').value;
         
-        // EMAIL ONLY - No phone number field
         if (!email.endsWith('@gmail.com')) {
             alert('Only Gmail addresses are allowed');
             return;
@@ -404,7 +404,8 @@ class LakoStreetFoodApp {
                     full_name: fullName, 
                     email, 
                     password, 
-                    device_id: this.deviceId, 
+                    device_id: this.deviceId,
+                    user_type: 'customer',
                     preferences: preferences
                 })
             });
@@ -424,12 +425,6 @@ class LakoStreetFoodApp {
     
     async forgotPassword() {
         const email = document.getElementById('forgot-email').value;
-        
-        if (!email.endsWith('@gmail.com')) {
-            alert('Only Gmail addresses are allowed');
-            return;
-        }
-        
         alert('Password reset link sent to ' + email);
         this.showLogin();
     }
@@ -466,7 +461,6 @@ class LakoStreetFoodApp {
         }
     }
     
-    // ============= DATA LOADING =============
     async loadAllData() {
         await Promise.all([
             this.loadVendors(),
@@ -483,6 +477,7 @@ class LakoStreetFoodApp {
         this.loadShortlist();
         this.loadActivities();
         this.updateProfileStats();
+        this.loadSearchHistoryDisplay();
     }
     
     async loadVendors() {
@@ -553,7 +548,6 @@ class LakoStreetFoodApp {
         }
     }
     
-    // ============= FEED =============
     async loadFeed(reset = true) {
         if (reset) {
             this.currentPage = 0;
@@ -973,7 +967,6 @@ class LakoStreetFoodApp {
         document.getElementById('feed-filter-modal').classList.add('hidden');
     }
     
-    // ============= MAP =============
     async initMap() {
         if (!this.map) {
             this.map = L.map('map').setView([13.9500, 121.3167], 13);
@@ -1023,6 +1016,19 @@ class LakoStreetFoodApp {
             filteredVendors = filteredVendors.filter(v => (v.rating || 0) >= this.mapFilters.minRating);
         }
         
+        if (this.mapRadius < 50) {
+            filteredVendors = filteredVendors.filter(v => {
+                if (v.latitude && v.longitude && this.currentLocation) {
+                    const distance = this.calculateDistance(
+                        this.currentLocation.lat, this.currentLocation.lng,
+                        v.latitude, v.longitude
+                    );
+                    return distance <= this.mapRadius;
+                }
+                return true;
+            });
+        }
+        
         filteredVendors.forEach(vendor => {
             if (vendor.latitude && vendor.longitude) {
                 const foodIcon = this.getFoodIcon(vendor.business_name);
@@ -1038,6 +1044,17 @@ class LakoStreetFoodApp {
                 this.markers.push(marker);
             }
         });
+    }
+    
+    calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
     }
     
     showRadiusModal() {
@@ -1092,17 +1109,10 @@ class LakoStreetFoodApp {
                     data: trafficData.weeklyData,
                     borderColor: 'var(--primary)',
                     backgroundColor: 'rgba(230,126,34,0.1)',
-                    fill: true,
-                    tension: 0.4
+                    fill: true
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'top' }
-                }
-            }
+            options: { responsive: true, maintainAspectRatio: false }
         });
         
         document.getElementById('traffic-modal').classList.remove('hidden');
@@ -1134,9 +1144,6 @@ class LakoStreetFoodApp {
         }
         if (peakHour >= 17 && peakHour <= 21) {
             insights.push('Evenings are peak street food hours (5PM-9PM)');
-        }
-        if (weeklyData[busiestDayIndex] > total / 7 * 1.5) {
-            insights.push(`${busiestDay} is the best day to find fresh street food!`);
         }
         if (peakHour >= 11 && peakHour <= 14) {
             insights.push('Lunch time also gets busy (11AM-2PM)');
@@ -1170,11 +1177,9 @@ class LakoStreetFoodApp {
                     <p><i class="fas fa-map-marker-alt"></i> ${this.escapeHtml(vendor.address || 'No address')}</p>
                     <p><i class="fas fa-tag"></i> ${vendor.category || 'Street Food'}</p>
                     <p><i class="fas fa-align-left"></i> ${this.escapeHtml(vendor.description || 'No description')}</p>
-                    <p><i class="fas fa-chart-line"></i> Foodie Traffic: ${this.getTrafficLevel(vendorId)}</p>
                     <div style="display:flex; gap:10px; margin-top:15px;">
                         <button onclick="app.chatWithVendor(${vendorId})" class="btn-primary"><i class="fab fa-facebook-messenger"></i> Ask About Food</button>
                         <button onclick="app.addToShortlist(${vendorId})" class="btn-secondary"><i class="fas fa-${isSaved ? 'heart' : 'heart-o'}"></i> ${isSaved ? 'Saved' : 'Save Food Spot'}</button>
-                        <button onclick="app.shareVendor(${vendorId})" class="btn-secondary"><i class="fas fa-share"></i> Share</button>
                     </div>
                 </div>
             </div>
@@ -1182,17 +1187,6 @@ class LakoStreetFoodApp {
         document.body.appendChild(modal);
         
         await this.logActivity('view_vendor', vendorId);
-    }
-    
-    getTrafficLevel(vendorId) {
-        const vendorActivities = this.activities.filter(a => a.vendor_id === vendorId);
-        const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        const recentActivities = vendorActivities.filter(a => new Date(a.created_at).getTime() > weekAgo);
-        
-        if (recentActivities.length > 100) return 'Hot Spot';
-        if (recentActivities.length > 50) return 'Busy';
-        if (recentActivities.length > 10) return 'Steady';
-        return 'Quiet';
     }
     
     async addToShortlist(vendorId) {
@@ -1244,21 +1238,6 @@ class LakoStreetFoodApp {
         }
     }
     
-    shareVendor(vendorId) {
-        const vendor = this.vendors.find(v => v.id === vendorId);
-        if (navigator.share) {
-            navigator.share({
-                title: vendor.business_name,
-                text: `Check out ${vendor.business_name} on Lako Street Food!`,
-                url: window.location.href
-            });
-        } else {
-            prompt('Share this food spot:', `${vendor.business_name}\n\n${vendor.address}\n\nRating: ${vendor.rating}/5`);
-        }
-        this.logActivity('share_vendor', vendorId);
-    }
-    
-    // ============= SUGGESTIONS =============
     async loadSuggestions() {
         if (!this.currentUser) return;
         
@@ -1302,26 +1281,13 @@ class LakoStreetFoodApp {
                 .slice(0, 5);
         }
         
-        const similarVendors = this.vendors
-            .filter(v => viewedVendors.includes(v.id) && v.category)
-            .map(v => v.category)
-            .filter((c, i, a) => a.indexOf(c) === i)
-            .flatMap(cat => this.vendors.filter(v => v.category === cat && !viewedVendors.includes(v.id)))
-            .filter((v, i, a) => a.findIndex(x => x.id === v.id) === i)
-            .slice(0, 5);
-        
         const mostReviewed = [...this.vendors]
             .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
             .slice(0, 5);
         
         this.renderSuggestions('trending-container', trendingVendors, 'Trending Street Food');
         this.renderSuggestions('personalized-container', personalizedVendors, 'Recommended for You');
-        this.renderSuggestions('similar-container', similarVendors, 'Similar to Your Taste');
         this.renderSuggestions('most-reviewed-container', mostReviewed, 'Most Reviewed Food Spots');
-        
-        const highTrafficVendors = this.vendors
-            .filter(v => this.getTrafficLevel(v.id) === 'Hot Spot')
-            .slice(0, 3);
     }
     
     renderSuggestions(containerId, vendors, title) {
@@ -1348,7 +1314,6 @@ class LakoStreetFoodApp {
         `).join('');
     }
     
-    // ============= SEARCH =============
     loadSearchHistory() {
         const saved = localStorage.getItem('lako_search_history');
         if (saved) this.searchHistory = JSON.parse(saved);
@@ -1362,6 +1327,31 @@ class LakoStreetFoodApp {
         if (!query.trim()) return;
         this.searchHistory = [query, ...this.searchHistory.filter(q => q !== query)];
         this.saveSearchHistory();
+        this.loadSearchHistoryDisplay();
+    }
+    
+    loadSearchHistoryDisplay() {
+        const container = document.getElementById('recent-searches-list');
+        if (container && this.searchHistory.length > 0) {
+            container.innerHTML = this.searchHistory.map(q => `
+                <button class="search-history-item" onclick="app.searchWithQuery('${this.escapeHtml(q)}')">
+                    <i class="fas fa-clock"></i> ${this.escapeHtml(q)}
+                </button>
+            `).join('');
+        } else if (container) {
+            container.innerHTML = '<p class="no-history">No recent searches</p>';
+        }
+    }
+    
+    clearSearchHistory() {
+        this.searchHistory = [];
+        this.saveSearchHistory();
+        this.loadSearchHistoryDisplay();
+    }
+    
+    searchWithQuery(query) {
+        document.getElementById('search-input').value = query;
+        this.search();
     }
     
     async search() {
@@ -1375,7 +1365,7 @@ class LakoStreetFoodApp {
             const results = this.vendors.filter(v => 
                 v.business_name.toLowerCase().includes(query) ||
                 (v.category && v.category.toLowerCase().includes(query)) ||
-                (v.description && v.description.toLowerCase().includes(query))
+                (v.address && v.address.toLowerCase().includes(query))
             );
             
             resultsContainer.innerHTML = results.map(v => `
@@ -1427,7 +1417,6 @@ class LakoStreetFoodApp {
         this.loadFeed(true);
     }
     
-    // ============= SHORTLIST =============
     loadShortlist() {
         const container = document.getElementById('shortlist-container');
         if (!container) return;
@@ -1445,7 +1434,6 @@ class LakoStreetFoodApp {
                 <div class="vendor-info">
                     <h4>${this.escapeHtml(v.business_name)}</h4>
                     <div class="rating"><i class="fas fa-star"></i> ${v.rating || 0}</div>
-                    <div class="traffic"><i class="fas fa-chart-line"></i> ${this.getTrafficLevel(v.id)}</div>
                 </div>
                 <button class="remove-shortlist" onclick="event.stopPropagation(); app.removeFromShortlist(${v.id})">
                     <i class="fas fa-trash"></i>
@@ -1454,7 +1442,6 @@ class LakoStreetFoodApp {
         `).join('');
     }
     
-    // ============= ACTIVITIES =============
     async logActivity(type, vendorId = null, metadata = {}) {
         if (!this.currentUser || !this.userPreferences.privacy.trackActivity) return;
         
@@ -1559,7 +1546,7 @@ class LakoStreetFoodApp {
     previewVendor(vendorId) {
         const vendor = this.vendors.find(v => v.id === vendorId);
         if (!vendor) return;
-        alert(`Preview: ${vendor.business_name}\nCategory: ${vendor.category}\nRating: ${vendor.rating}/5\nTraffic: ${this.getTrafficLevel(vendorId)}`);
+        alert(`Preview: ${vendor.business_name}\nCategory: ${vendor.category}\nRating: ${vendor.rating}/5`);
     }
     
     async clearAllHistory() {
@@ -1579,7 +1566,6 @@ class LakoStreetFoodApp {
         alert('Food journey history cleared');
     }
     
-    // ============= PROFILE =============
     updateProfileStats() {
         const myPosts = this.posts.filter(p => p.user_id === this.currentUser?.id).length;
         const myReviews = this.posts.filter(p => p.user_id === this.currentUser?.id && p.post_type === 'review').length;
@@ -1690,21 +1676,18 @@ class LakoStreetFoodApp {
         }
     }
     
-    // ============= PREFERENCES =============
     showPreferences() {
         const interestsGrid = document.getElementById('pref-interests');
+        const allInterests = ['BBQ', 'Fishball', 'Isaw', 'Kwek-Kwek', 'Turon', 'Siomai', 'Burgers', 'Pancit', 'Rice Meals', 'Desserts', 'Beverages'];
         
-        interestsGrid.innerHTML = this.streetFoodTypes.map(food => `
+        interestsGrid.innerHTML = allInterests.map(interest => `
             <label class="pref-option">
-                <input type="checkbox" value="${food}" ${this.userPreferences.interests.includes(food) ? 'checked' : ''}>
-                <i class="fas ${this.getFoodIcon(food)}"></i> ${food}
+                <input type="checkbox" value="${interest}" ${this.userPreferences.interests.includes(interest) ? 'checked' : ''}>
+                <i class="fas ${this.getFoodIcon(interest)}"></i> ${interest}
             </label>
         `).join('');
         
         document.getElementById('pref-radius').value = this.userPreferences.radius;
-        document.getElementById('pref-show-reviews').checked = this.userPreferences.feedContent.reviews;
-        document.getElementById('pref-show-questions').checked = this.userPreferences.feedContent.questions;
-        document.getElementById('pref-show-text').checked = this.userPreferences.feedContent.text;
         
         document.getElementById('preferences-modal').classList.remove('hidden');
     }
@@ -1718,11 +1701,6 @@ class LakoStreetFoodApp {
         
         this.userPreferences.interests = interests;
         this.userPreferences.radius = parseInt(document.getElementById('pref-radius').value);
-        this.userPreferences.feedContent = {
-            reviews: document.getElementById('pref-show-reviews').checked,
-            questions: document.getElementById('pref-show-questions').checked,
-            text: document.getElementById('pref-show-text').checked
-        };
         
         this.saveUserPreferences();
         this.loadFeed(true);
@@ -1736,7 +1714,6 @@ class LakoStreetFoodApp {
         document.getElementById('notif-comments').checked = this.userPreferences.notifications.comments;
         document.getElementById('notif-suggestions').checked = this.userPreferences.notifications.suggestions;
         document.getElementById('notif-promos').checked = this.userPreferences.notifications.promos;
-        document.getElementById('notif-traffic').checked = this.userPreferences.notifications.traffic;
         
         document.getElementById('notification-modal').classList.remove('hidden');
     }
@@ -1746,8 +1723,7 @@ class LakoStreetFoodApp {
             posts: document.getElementById('notif-new-posts').checked,
             comments: document.getElementById('notif-comments').checked,
             suggestions: document.getElementById('notif-suggestions').checked,
-            promos: document.getElementById('notif-promos').checked,
-            traffic: document.getElementById('notif-traffic').checked
+            promos: document.getElementById('notif-promos').checked
         };
         
         this.saveUserPreferences();
@@ -1758,7 +1734,6 @@ class LakoStreetFoodApp {
     showPrivacySettings() {
         document.getElementById('privacy-location').checked = this.userPreferences.privacy.shareLocation;
         document.getElementById('privacy-activity').checked = this.userPreferences.privacy.trackActivity;
-        document.getElementById('privacy-personalize').checked = this.userPreferences.privacy.personalizedAds;
         
         document.getElementById('privacy-modal').classList.remove('hidden');
     }
@@ -1766,8 +1741,7 @@ class LakoStreetFoodApp {
     savePrivacySettings() {
         this.userPreferences.privacy = {
             shareLocation: document.getElementById('privacy-location').checked,
-            trackActivity: document.getElementById('privacy-activity').checked,
-            personalizedAds: document.getElementById('privacy-personalize').checked
+            trackActivity: document.getElementById('privacy-activity').checked
         };
         
         this.saveUserPreferences();
@@ -1775,7 +1749,6 @@ class LakoStreetFoodApp {
         alert('Privacy settings saved');
     }
     
-    // ============= UTILITIES =============
     switchTab(tabName) {
         document.querySelectorAll('.tab').forEach(tab => tab.classList.add('hidden'));
         document.getElementById(`${tabName}-tab`).classList.remove('hidden');
@@ -1836,4 +1809,4 @@ class LakoStreetFoodApp {
 }
 
 // Initialize app
-const app = new LakoStreetFoodApp();
+const app = new LakoCustomerApp();
