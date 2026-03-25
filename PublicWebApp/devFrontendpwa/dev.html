@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#e67e22">
+    <title>Lako Dev Admin - Platform Management</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #0a0a0f; color: #eee; }
+        :root { --primary: #e67e22; --primary-dark: #d35400; --primary-light: #f39c12; --primary-gradient: linear-gradient(135deg, #e67e22 0%, #f39c12 100%); --primary-shadow: rgba(230, 126, 34, 0.4); }
+        
+        .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0f; z-index: 100; overflow-y: auto; }
+        .hidden { display: none !important; }
+        
+        #splash { background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white; text-align: center; }
+        .splash-content { animation: fadeInUp 0.8s ease; }
+        .splash-content i { margin-bottom: 20px; font-size: 4rem; animation: bounce 1s ease infinite; }
+        .splash-content h1 { font-size: 3rem; margin-bottom: 10px; }
+        .splash-content p { font-size: 1rem; opacity: 0.9; }
+        .splash-content small { display: block; font-size: 0.7rem; opacity: 0.7; margin-top: 20px; }
+        .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .container { padding: 50px 20px; max-width: 450px; margin: 0 auto; text-align: center; }
+        .icon-primary { color: var(--primary); margin-bottom: 20px; font-size: 3rem; }
+        .tagline { color: #888; margin-bottom: 30px; }
+        
+        .btn-primary { background: var(--primary-gradient); color: white; border: none; padding: 14px 24px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 12px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--primary-shadow); }
+        .btn-secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 14px 24px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 12px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-secondary:hover { background: var(--primary); color: white; }
+        .btn-danger { background: #dc3545; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-size: 14px; cursor: pointer; width: 100%; margin-top: 20px; }
+        .link-btn { background: none; border: none; color: var(--primary); margin-top: 15px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .icon-btn { background: none; border: none; color: #888; cursor: pointer; padding: 8px; font-size: 1rem; transition: color 0.2s; }
+        .icon-btn:hover { color: var(--primary); }
+        
+        .input-group { position: relative; display: flex; align-items: center; margin-bottom: 15px; }
+        .input-group i { position: absolute; left: 15px; color: var(--primary); }
+        .input-group input { width: 100%; padding: 14px 14px 14px 45px; border: 1px solid #222; border-radius: 12px; font-size: 16px; background: #111; color: #eee; transition: all 0.3s ease; }
+        .input-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-shadow); }
+        
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #111; display: flex; justify-content: space-around; padding: 8px 0 12px; box-shadow: 0 -4px 12px rgba(0,0,0,0.5); z-index: 100; }
+        .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.6rem; color: #666; padding: 6px 8px; cursor: pointer; transition: color 0.2s; }
+        .nav-btn i { font-size: 1.2rem; }
+        .nav-btn.active { color: var(--primary); }
+        
+        .tab { padding: 15px 15px 80px 15px; min-height: 100vh; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: #111; border-radius: 16px; padding: 16px; text-align: center; border: 1px solid #222; }
+        .stat-card i { font-size: 1.8rem; color: var(--primary); margin-bottom: 8px; }
+        .stat-card h3 { font-size: 1.5rem; color: white; }
+        .stat-card p { color: #888; font-size: 0.7rem; margin-top: 5px; }
+        
+        .table-container { background: #111; border-radius: 16px; overflow-x: auto; margin-bottom: 20px; border: 1px solid #222; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #222; }
+        th { background: #1a1a2e; color: var(--primary); font-weight: 600; }
+        tr:hover { background: #1a1a2e; }
+        .action-btn { background: none; border: none; color: #dc3545; cursor: pointer; padding: 5px 10px; border-radius: 6px; }
+        .action-btn:hover { background: #dc3545; color: white; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #111; border-radius: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #222; }
+        .modal-header { padding: 20px; background: var(--primary-gradient); color: white; position: relative; }
+        .modal-header h3 { margin: 0; }
+        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #222; display: flex; gap: 10px; justify-content: flex-end; }
+        .close-modal { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; position: absolute; right: 20px; top: 20px; }
+        
+        .pin-box { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+        .pin-digit { width: 50px; height: 60px; text-align: center; font-size: 24px; border: 2px solid var(--primary); border-radius: 12px; background: #111; color: white; }
+        
+        .device-list { margin-top: 15px; }
+        .device-item { background: #1a1a2e; padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
+        .status-active { background: #28a745; color: white; }
+        .status-pending { background: #fd7e14; color: white; }
+        
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .container { padding: 30px 20px; }
+            .nav-btn span { font-size: 0.5rem; }
+            .nav-btn i { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- SPLASH SCREEN -->
+        <div id="splash" class="screen">
+            <div class="splash-content">
+                <i class="fas fa-shield-alt"></i>
+                <h1>LAKO DEV ADMIN</h1>
+                <p>Platform Management Console</p>
+                <div class="loader"></div>
+                <small>196 Bula, Tiaong, Quezon</small>
+                <small>Secure Admin Access</small>
+            </div>
+        </div>
+
+        <!-- LOGIN SCREEN -->
+        <div id="login-screen" class="screen hidden">
+            <div class="container">
+                <i class="fas fa-shield-alt fa-3x icon-primary"></i>
+                <h1>Dev Admin Login</h1>
+                <p class="tagline">Secure access with device verification</p>
+                <form id="login-form">
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="login-email" placeholder="Admin Email" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
+                </form>
+                <button id="register-btn" class="btn-secondary"><i class="fas fa-user-plus"></i> Register New Admin</button>
+                <button id="resend-pin-btn" class="link-btn"><i class="fas fa-redo-alt"></i> Resend PIN</button>
+            </div>
+        </div>
+
+        <!-- REGISTER SCREEN -->
+        <div id="register-screen" class="screen hidden">
+            <div class="container">
+                <i class="fas fa-user-shield fa-3x icon-primary"></i>
+                <h1>Register Admin</h1>
+                <form id="register-form">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="reg-fullname" placeholder="Full Name" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="reg-email" placeholder="Email Address" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="reg-password" placeholder="Password" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="reg-confirm-password" placeholder="Confirm Password" required>
+                    </div>
+                    <button type="submit" class="btn-primary"><i class="fas fa-check"></i> Register</button>
+                </form>
+                <button id="back-to-login" class="link-btn"><i class="fas fa-arrow-left"></i> Back to Login</button>
+            </div>
+        </div>
+
+        <!-- PIN VERIFICATION SCREEN -->
+        <div id="pin-screen" class="screen hidden">
+            <div class="container">
+                <i class="fas fa-key fa-3x icon-primary"></i>
+                <h1>Verify Device</h1>
+                <p class="tagline">Enter the 6-digit PIN sent to your registered device</p>
+                <div class="pin-box">
+                    <input type="text" maxlength="1" class="pin-digit" id="pin-1">
+                    <input type="text" maxlength="1" class="pin-digit" id="pin-2">
+                    <input type="text" maxlength="1" class="pin-digit" id="pin-3">
+                    <input type="text" maxlength="1" class="pin-digit" id="pin-4">
+                    <input type="text" maxlength="1" class="pin-digit" id="pin-5">
+                    <input type="text" maxlength="1" class="pin-digit" id="pin-6">
+                </div>
+                <button id="verify-pin-btn" class="btn-primary"><i class="fas fa-check-circle"></i> Verify PIN</button>
+                <button id="resend-pin-verify-btn" class="link-btn"><i class="fas fa-redo-alt"></i> Resend PIN</button>
+                <p class="tagline" style="font-size: 0.7rem; margin-top: 20px;">PIN expires in 10 minutes</p>
+            </div>
+        </div>
+
+        <!-- MAIN DEV ADMIN DASHBOARD -->
+        <div id="main" class="hidden">
+            <!-- Bottom Navigation -->
+            <div class="bottom-nav">
+                <button data-tab="dashboard" class="nav-btn active"><i class="fas fa-chart-line"></i><span>Dashboard</span></button>
+                <button data-tab="users" class="nav-btn"><i class="fas fa-users"></i><span>Users</span></button>
+                <button data-tab="vendors" class="nav-btn"><i class="fas fa-store"></i><span>Vendors</span></button>
+                <button data-tab="posts" class="nav-btn"><i class="fas fa-newspaper"></i><span>Posts</span></button>
+                <button data-tab="devices" class="nav-btn"><i class="fas fa-mobile-alt"></i><span>Devices</span></button>
+                <button data-tab="logs" class="nav-btn"><i class="fas fa-history"></i><span>Logs</span></button>
+                <button data-tab="settings" class="nav-btn"><i class="fas fa-cog"></i><span>Settings</span></button>
+            </div>
+
+            <!-- DASHBOARD TAB -->
+            <div id="dashboard-tab" class="tab active">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-chart-line"></i> Platform Overview</h3>
+                <div class="stats-grid" id="dashboard-stats">
+                    <div class="stat-card"><i class="fas fa-users"></i><h3 id="total-users">0</h3><p>Total Users</p></div>
+                    <div class="stat-card"><i class="fas fa-store"></i><h3 id="total-vendors">0</h3><p>Total Vendors</p></div>
+                    <div class="stat-card"><i class="fas fa-newspaper"></i><h3 id="total-posts">0</h3><p>Total Posts</p></div>
+                    <div class="stat-card"><i class="fas fa-comment"></i><h3 id="total-comments">0</h3><p>Total Comments</p></div>
+                    <div class="stat-card"><i class="fas fa-mobile-alt"></i><h3 id="active-devices">0</h3><p>Active Devices</p></div>
+                    <div class="stat-card"><i class="fas fa-chart-line"></i><h3 id="today-activity">0</h3><p>Today's Activity</p></div>
+                </div>
+                <div class="table-container">
+                    <h4 style="padding: 15px;"><i class="fas fa-chart-bar"></i> Recent Activity</h4>
+                    <div id="recent-activity"></div>
+                </div>
+            </div>
+
+            <!-- USERS TAB -->
+            <div id="users-tab" class="tab hidden">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-users"></i> User Management</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Name</th><th>Email</th><th>Type</th><th>Created</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody id="users-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VENDORS TAB -->
+            <div id="vendors-tab" class="tab hidden">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-store"></i> Vendor Management</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Business Name</th><th>Owner</th><th>Category</th><th>Rating</th><th>Status</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody id="vendors-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- POSTS TAB -->
+            <div id="posts-tab" class="tab hidden">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-newspaper"></i> Content Moderation</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Author</th><th>Title</th><th>Type</th><th>Rating</th><th>Created</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody id="posts-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- DEVICES TAB -->
+            <div id="devices-tab" class="tab hidden">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-mobile-alt"></i> Authorized Devices</h3>
+                <div id="devices-list"></div>
+                <button id="revoke-all-devices" class="btn-danger"><i class="fas fa-trash"></i> Revoke All Other Devices</button>
+            </div>
+
+            <!-- LOGS TAB -->
+            <div id="logs-tab" class="tab hidden">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-history"></i> System Logs</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr>
+                        </thead>
+                        <tbody id="logs-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SETTINGS TAB -->
+            <div id="settings-tab" class="tab hidden">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-cog"></i> Admin Settings</h3>
+                <div class="table-container" style="padding: 15px;">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label><i class="fas fa-user"></i> Profile</label>
+                        <div id="admin-profile"></div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label><i class="fas fa-key"></i> Change Password</label>
+                        <input type="password" id="new-password" placeholder="New Password" class="form-control" style="width: 100%; padding: 10px; margin-bottom: 10px; background: #111; border: 1px solid #222; color: white; border-radius: 8px;">
+                        <input type="password" id="confirm-password" placeholder="Confirm Password" class="form-control" style="width: 100%; padding: 10px; background: #111; border: 1px solid #222; color: white; border-radius: 8px;">
+                        <button id="update-password" class="btn-primary" style="margin-top: 10px;"><i class="fas fa-save"></i> Update Password</button>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-sign-out-alt"></i> Session</label>
+                        <button id="logout-btn" class="btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="dev.js"></script>
+</body>
+</html>

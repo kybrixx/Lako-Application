@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#e67e22">
+    <title>Lako Vendor - Manage Your Food Business</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #0a0a0f; color: #eee; }
+        :root { --primary: #e67e22; --primary-dark: #d35400; --primary-light: #f39c12; --primary-gradient: linear-gradient(135deg, #e67e22 0%, #f39c12 100%); --primary-shadow: rgba(230, 126, 34, 0.4); }
+        
+        /* Screens */
+        .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0a0a0f; z-index: 100; overflow-y: auto; }
+        .hidden { display: none !important; }
+        
+        /* Splash Screen */
+        #splash { background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white; text-align: center; }
+        .splash-content { animation: fadeInUp 0.8s ease; }
+        .splash-content i { margin-bottom: 20px; font-size: 4rem; animation: bounce 1s ease infinite; }
+        .splash-content h1 { font-size: 3rem; margin-bottom: 10px; }
+        .splash-content p { font-size: 1rem; opacity: 0.9; }
+        .splash-content small { display: block; font-size: 0.7rem; opacity: 0.7; margin-top: 20px; }
+        .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Container */
+        .container { padding: 50px 20px; max-width: 450px; margin: 0 auto; text-align: center; }
+        .icon-primary { color: var(--primary); margin-bottom: 20px; font-size: 3rem; }
+        .tagline { color: #888; margin-bottom: 30px; }
+        
+        /* Buttons */
+        .btn-primary { background: var(--primary-gradient); color: white; border: none; padding: 14px 24px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 12px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--primary-shadow); }
+        .btn-secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 14px 24px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 12px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-secondary:hover { background: var(--primary); color: white; }
+        .btn-danger { background: #dc3545; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-size: 14px; cursor: pointer; width: 100%; margin-top: 20px; }
+        .btn-success { background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-size: 14px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .link-btn { background: none; border: none; color: var(--primary); margin-top: 15px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .icon-btn { background: none; border: none; color: #888; cursor: pointer; padding: 8px; font-size: 1rem; transition: color 0.2s; }
+        .icon-btn:hover { color: var(--primary); }
+        
+        /* Forms */
+        .input-group { position: relative; display: flex; align-items: center; margin-bottom: 15px; }
+        .input-group i { position: absolute; left: 15px; color: var(--primary); }
+        .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 14px 14px 14px 45px; border: 1px solid #222; border-radius: 12px; font-size: 16px; background: #111; color: #eee; transition: all 0.3s ease; }
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-shadow); }
+        .input-group textarea { padding: 14px; resize: vertical; min-height: 80px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #888; font-size: 0.9rem; }
+        .form-group label i { margin-right: 8px; color: var(--primary); }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #222; border-radius: 10px; font-size: 14px; background: #111; color: #eee; }
+        
+        /* Bottom Navigation */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #111; display: flex; justify-content: space-around; padding: 8px 0 12px; box-shadow: 0 -4px 12px rgba(0,0,0,0.5); z-index: 100; }
+        .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.6rem; color: #666; padding: 6px 8px; cursor: pointer; transition: color 0.2s; }
+        .nav-btn i { font-size: 1.2rem; }
+        .nav-btn.active { color: var(--primary); }
+        
+        /* Tabs */
+        .tab { padding: 15px 15px 80px 15px; min-height: 100vh; }
+        
+        /* Dashboard Cards */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: #111; border-radius: 16px; padding: 16px; text-align: center; border: 1px solid #222; }
+        .stat-card i { font-size: 1.8rem; color: var(--primary); margin-bottom: 8px; }
+        .stat-card h3 { font-size: 1.5rem; color: white; }
+        .stat-card p { color: #888; font-size: 0.7rem; margin-top: 5px; }
+        
+        /* Product Cards */
+        .product-card { background: #111; border-radius: 16px; padding: 12px; margin-bottom: 12px; display: flex; gap: 12px; align-items: center; border: 1px solid #222; }
+        .product-icon { width: 50px; height: 50px; background: var(--primary-gradient); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .product-info { flex: 1; }
+        .product-info h4 { margin-bottom: 4px; font-size: 1rem; }
+        .product-info p { font-size: 0.7rem; color: #888; }
+        .product-stats { display: flex; gap: 12px; margin-top: 5px; font-size: 0.65rem; color: #666; }
+        .product-actions { display: flex; gap: 5px; }
+        .product-actions button { background: none; border: none; color: #888; cursor: pointer; padding: 6px; border-radius: 8px; transition: all 0.2s; }
+        .product-actions button:hover { background: #222; color: var(--primary); }
+        
+        /* Review Cards */
+        .review-card { background: #111; border-radius: 16px; padding: 15px; margin-bottom: 12px; border: 1px solid #222; }
+        .review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+        .reviewer { font-weight: bold; color: var(--primary); }
+        .review-rating { color: #f39c12; font-size: 0.8rem; }
+        .review-date { color: #666; font-size: 0.7rem; }
+        .review-content { color: #aaa; margin-bottom: 12px; line-height: 1.4; }
+        .review-actions { display: flex; gap: 12px; border-top: 1px solid #222; padding-top: 12px; margin-top: 8px; }
+        .review-actions button { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; gap: 5px; }
+        .reply-box { margin-top: 12px; padding: 12px; background: #0a0a0f; border-radius: 12px; border-left: 3px solid var(--primary); }
+        .reply-text { color: #888; font-size: 0.8rem; margin-bottom: 8px; }
+        
+        /* Chart Containers */
+        .chart-container { background: #111; border-radius: 16px; padding: 15px; margin-bottom: 20px; border: 1px solid #222; }
+        .chart-container h4 { margin-bottom: 12px; font-size: 0.9rem; color: #888; display: flex; align-items: center; gap: 8px; }
+        canvas { max-height: 200px; width: 100%; }
+        
+        /* Traffic Gauge */
+        .traffic-gauge { text-align: center; padding: 20px; background: #111; border-radius: 16px; margin-bottom: 20px; }
+        .gauge-value { font-size: 3rem; font-weight: bold; color: var(--primary); }
+        .gauge-label { color: #888; margin-top: 5px; }
+        .traffic-level { display: inline-block; padding: 5px 15px; border-radius: 20px; margin-top: 10px; font-size: 0.8rem; }
+        .level-high { background: #dc3545; color: white; }
+        .level-medium { background: #fd7e14; color: white; }
+        .level-low { background: #28a745; color: white; }
+        
+        /* Sample Request Cards */
+        .sample-card { background: #111; border-radius: 16px; padding: 15px; margin-bottom: 12px; border: 1px solid #222; }
+        .sample-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .sample-customer { font-weight: bold; color: var(--primary); }
+        .sample-status { padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; }
+        .status-pending { background: #fd7e14; color: white; }
+        .status-approved { background: #28a745; color: white; }
+        .status-rejected { background: #dc3545; color: white; }
+        .sample-actions { display: flex; gap: 10px; margin-top: 12px; }
+        .sample-actions button { padding: 6px 12px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.75rem; }
+        
+        /* Message Cards */
+        .message-card { background: #111; border-radius: 16px; padding: 15px; margin-bottom: 12px; border: 1px solid #222; }
+        .message-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .message-customer { font-weight: bold; color: var(--primary); }
+        .message-time { color: #666; font-size: 0.7rem; }
+        .message-content { color: #aaa; margin-bottom: 10px; }
+        .message-reply { display: flex; gap: 8px; margin-top: 10px; }
+        .message-reply input { flex: 1; padding: 8px; border-radius: 20px; border: 1px solid #222; background: #0a0a0f; color: white; }
+        .message-reply button { padding: 8px 15px; border-radius: 20px; background: var(--primary); border: none; color: white; cursor: pointer; }
+        
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #111; border-radius: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #222; }
+        .modal-header { padding: 20px; background: var(--primary-gradient); color: white; position: relative; }
+        .modal-header h3 { margin: 0; }
+        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #222; display: flex; gap: 10px; justify-content: flex-end; }
+        .close-modal { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; position: absolute; right: 20px; top: 20px; }
+        .eula-text { font-size: 0.7rem; line-height: 1.5; white-space: pre-line; font-family: monospace; background: #0a0a0f; padding: 15px; border-radius: 12px; max-height: 55vh; overflow-y: auto; color: #ccc; }
+        
+        /* Map */
+        .location-map { height: 200px; border-radius: 12px; margin-bottom: 15px; overflow: hidden; }
+        
+        /* Slider */
+        .slider-container { padding: 10px 0; }
+        input[type="range"] { width: 100%; margin: 10px 0; }
+        .radius-value { text-align: center; color: var(--primary); font-weight: bold; margin-top: 5px; }
+        
+        /* Toggle Switch */
+        .toggle-switch { display: flex; align-items: center; justify-content: space-between; margin: 15px 0; }
+        .toggle-switch label { cursor: pointer; }
+        .toggle-input { display: none; }
+        .toggle-slider { width: 50px; height: 24px; background: #333; border-radius: 24px; position: relative; transition: 0.3s; cursor: pointer; }
+        .toggle-slider:before { content: ""; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: white; top: 2px; left: 3px; transition: 0.3s; }
+        .toggle-input:checked + .toggle-slider { background: var(--primary); }
+        .toggle-input:checked + .toggle-slider:before { transform: translateX(26px); }
+        
+        /* Empty State */
+        .empty-state { text-align: center; padding: 40px; color: #666; }
+        .empty-state i { font-size: 3rem; margin-bottom: 15px; }
+        .feed-preview { background: #0a0a0f; border-radius: 16px; padding: 15px; border: 1px solid #222; }
+        
+        /* Responsive */
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .container { padding: 30px 20px; }
+            .nav-btn span { font-size: 0.5rem; }
+            .nav-btn i { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- EULA MODAL - Vendor Version -->
+        <div id="eula-modal" class="modal-overlay">
+            <div class="modal-content modal-large" style="max-width: 800px;">
+                <div class="modal-header">
+                    <i class="fas fa-file-contract"></i>
+                    <h2>LAKO VENDOR - End User License Agreement</h2>
+                    <p class="dev-credit"><i class="fas fa-map-marker-alt"></i> 196 Bula, Tiaong, Quezon, Philippines 4325</p>
+                    <p class="dev-credit"><i class="fas fa-code"></i> Kyle Brian M. Morillo & Alexander Collin Millicamp</p>
+                </div>
+                <div class="modal-body">
+                    <div id="eula-text" class="eula-text"><i class="fas fa-spinner fa-spin"></i> Loading EULA...</div>
+                </div>
+                <div class="modal-footer">
+                    <button id="accept-eula" class="btn-primary"><i class="fas fa-check"></i> I Accept & Agree to Terms</button>
+                    <button id="decline-eula" class="btn-secondary"><i class="fas fa-times"></i> Decline</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SPLASH SCREEN -->
+        <div id="splash" class="screen">
+            <div class="splash-content">
+                <i class="fas fa-store"></i>
+                <h1>LAKO VENDOR</h1>
+                <p>Manage Your Food Business</p>
+                <div class="loader"></div>
+                <small>196 Bula, Tiaong, Quezon</small>
+                <small>Kyle Brian M. Morillo & Alexander Collin Millicamp</small>
+            </div>
+        </div>
+
+        <!-- LANDING SCREEN -->
+        <div id="landing" class="screen hidden">
+            <div class="container">
+                <i class="fas fa-store fa-3x icon-primary"></i>
+                <h1>LAKO VENDOR</h1>
+                <p class="tagline">Grow Your Street Food Business</p>
+                <button id="login-btn" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
+                <button id="register-btn" class="btn-secondary"><i class="fas fa-user-plus"></i> Register Business</button>
+            </div>
+        </div>
+
+        <!-- LOGIN SCREEN -->
+        <div id="login" class="screen hidden">
+            <div class="container">
+                <i class="fas fa-store fa-2x icon-primary"></i>
+                <h2>Vendor Login</h2>
+                <form id="login-form">
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="login-email" placeholder="Business Email (Gmail)" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
+                </form>
+                <button id="forgot-password-btn" class="link-btn"><i class="fas fa-key"></i> Forgot Password?</button>
+                <button id="back-to-landing" class="link-btn"><i class="fas fa-arrow-left"></i> Back</button>
+            </div>
+        </div>
+
+        <!-- REGISTER BUSINESS SCREEN -->
+        <div id="register-business" class="screen hidden">
+            <div class="container">
+                <i class="fas fa-building fa-2x icon-primary"></i>
+                <h2>Register Your Business</h2>
+                <form id="register-business-form">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="reg-fullname" placeholder="Full Name" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="reg-email" placeholder="Gmail Address" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="reg-password" placeholder="Password" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-store"></i>
+                        <input type="text" id="reg-business-name" placeholder="Business Legal Name" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-id-card"></i>
+                        <input type="text" id="reg-mayor-permit" placeholder="Mayor's Permit Number" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <input type="text" id="reg-address" placeholder="Business Address" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-phone"></i>
+                        <input type="tel" id="reg-phone" placeholder="Business Phone Number">
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-align-left"></i>
+                        <textarea id="reg-description" placeholder="Describe your business (what food do you serve?)" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary"><i class="fas fa-check-circle"></i> Submit Registration</button>
+                    <p class="tagline" style="font-size: 0.7rem; margin-top: 10px;">Your registration will be verified by admin</p>
+                </form>
+                <button id="back-to-landing2" class="link-btn"><i class="fas fa-arrow-left"></i> Back</button>
+            </div>
+        </div>
+
+        <!-- FORGOT PASSWORD SCREEN -->
+        <div id="forgot-password" class="screen hidden">
+            <div class="container">
+                <i class="fas fa-key fa-2x icon-primary"></i>
+                <h2>Reset Password</h2>
+                <form id="forgot-form">
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="forgot-email" placeholder="Business Email" required>
+                    </div>
+                    <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Send Reset Link</button>
+                </form>
+                <button id="back-to-login" class="link-btn"><i class="fas fa-arrow-left"></i> Back to Login</button>
+            </div>
+        </div>
+
+        <!-- MAIN VENDOR DASHBOARD -->
+        <div id="main" class="hidden">
+            <!-- Bottom Navigation - 7 Tabs -->
+            <div class="bottom-nav">
+                <button data-tab="dashboard" class="nav-btn active"><i class="fas fa-chart-line"></i><span>Dashboard</span></button>
+                <button data-tab="traffic" class="nav-btn"><i class="fas fa-chart-bar"></i><span>Traffic</span></button>
+                <button data-tab="feed" class="nav-btn"><i class="fas fa-newspaper"></i><span>Feed</span></button>
+                <button data-tab="catalog" class="nav-btn"><i class="fas fa-box"></i><span>Catalog</span></button>
+                <button data-tab="reviews" class="nav-btn"><i class="fas fa-star"></i><span>Reviews</span></button>
+                <button data-tab="inquiries" class="nav-btn"><i class="fas fa-comments"></i><span>Inquiries</span></button>
+                <button data-tab="profile" class="nav-btn"><i class="fas fa-user-circle"></i><span>Profile</span></button>
+            </div>
+
+            <!-- DASHBOARD TAB -->
+            <div id="dashboard-tab" class="tab active">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-chart-line"></i> Discovery Analytics</h3>
+                <div class="stats-grid">
+                    <div class="stat-card"><i class="fas fa-eye"></i><h3 id="views-today">0</h3><p>Views Today</p></div>
+                    <div class="stat-card"><i class="fas fa-calendar-week"></i><h3 id="views-week">0</h3><p>Views This Week</p></div>
+                    <div class="stat-card"><i class="fas fa-search"></i><h3 id="search-impressions">0</h3><p>Search Impressions</p></div>
+                    <div class="stat-card"><i class="fas fa-chart-line"></i><h3 id="search-rank">#0</h3><p>Avg Search Rank</p></div>
+                    <div class="stat-card"><i class="fas fa-star"></i><h3 id="avg-rating">0.0</h3><p>Avg Rating</p></div>
+                    <div class="stat-card"><i class="fas fa-comment"></i><h3 id="total-reviews">0</h3><p>Total Reviews</p></div>
+                    <div class="stat-card"><i class="fas fa-heart"></i><h3 id="saved-count">0</h3><p>Saved by Customers</p></div>
+                    <div class="stat-card"><i class="fas fa-users"></i><h3 id="unique-viewers">0</h3><p>Unique Viewers</p></div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-trophy"></i> Most Reviewed Products</h4>
+                    <div id="most-reviewed-products"></div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-fire"></i> Trending Products</h4>
+                    <div id="trending-products"></div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-chart-line"></i> Views This Week</h4>
+                    <canvas id="weekly-views-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- TRAFFIC TAB -->
+            <div id="traffic-tab" class="tab hidden">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-chart-line"></i> Foot Traffic Analytics</h3>
+                <div class="traffic-gauge">
+                    <div class="gauge-value" id="current-traffic">0</div>
+                    <div class="gauge-label">Current Foot Traffic Level</div>
+                    <div id="traffic-level-badge" class="traffic-level level-low">Low</div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-chart-line"></i> Today's Traffic by Hour</h4>
+                    <canvas id="today-traffic-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-chart-bar"></i> This Week's Traffic</h4>
+                    <canvas id="weekly-traffic-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-chart-line"></i> Comparison vs Last Week</h4>
+                    <canvas id="comparison-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-clock"></i> Peak Hours Analysis</h4>
+                    <div id="peak-hours-list"></div>
+                </div>
+                <button id="export-report-btn" class="btn-secondary"><i class="fas fa-download"></i> Export Traffic Report</button>
+            </div>
+
+            <!-- FEED TAB - How Products Appear -->
+            <div id="feed-tab" class="tab hidden">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-newspaper"></i> How Customers See You</h3>
+                <div class="chart-container">
+                    <h4><i class="fas fa-eye"></i> Feed Preview</h4>
+                    <div id="feed-preview" class="feed-preview"></div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-star"></i> Most Reviewed Products</h4>
+                    <div id="feed-most-reviewed"></div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-fire"></i> Trending Products (Last 7 Days)</h4>
+                    <p style="font-size: 0.7rem; color: #888; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Based on shares, likes, comments, and reviews</p>
+                    <div id="feed-trending"></div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-clock"></i> Recently Reviewed</h4>
+                    <div id="feed-recent"></div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-chart-line"></i> Engagement Metrics</h4>
+                    <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="stat-card"><i class="fas fa-share-alt"></i><h3 id="total-shares">0</h3><p>Shares</p></div>
+                        <div class="stat-card"><i class="fas fa-thumbs-up"></i><h3 id="total-likes">0</h3><p>Likes</p></div>
+                        <div class="stat-card"><i class="fas fa-comment"></i><h3 id="total-comments">0</h3><p>Comments</p></div>
+                        <div class="stat-card"><i class="fas fa-star"></i><h3 id="total-reviews-count">0</h3><p>Reviews</p></div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-chart-line"></i> Product Performance</h4>
+                    <div id="product-performance-list"></div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-rocket"></i> Boost Your Product (Free & Organic)</h4>
+                    <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 15px;">Products with high engagement automatically appear in trending section!</p>
+                    <select id="boost-product-select" class="form-control" style="margin-bottom: 10px;"><option value="">Select product</option></select>
+                    <button id="boost-info-btn" class="btn-secondary"><i class="fas fa-info-circle"></i> How to Boost</button>
+                </div>
+            </div>
+
+            <!-- CATALOG TAB -->
+            <div id="catalog-tab" class="tab hidden">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-box"></i> Product Catalog</h3>
+                <button id="add-product-btn" class="btn-primary" style="margin-bottom: 15px;"><i class="fas fa-plus"></i> Add Product</button>
+                <div id="products-list"></div>
+            </div>
+
+            <!-- REVIEWS TAB -->
+            <div id="reviews-tab" class="tab hidden">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-star"></i> Customer Reviews</h3>
+                <div class="stats-grid">
+                    <div class="stat-card"><i class="fas fa-star"></i><h3 id="avg-rating-display">0.0</h3><p>Average Rating</p></div>
+                    <div class="stat-card"><i class="fas fa-chart-pie"></i><h3 id="total-reviews-display">0</h3><p>Total Reviews</p></div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-chart-bar"></i> Rating Breakdown</h4>
+                    <div id="rating-breakdown"></div>
+                </div>
+                <div id="all-reviews-list"></div>
+            </div>
+
+            <!-- INQUIRIES TAB -->
+            <div id="inquiries-tab" class="tab hidden">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-comments"></i> Customer Inquiries</h3>
+                <div class="chart-container">
+                    <h4><i class="fas fa-box-open"></i> Sample Requests</h4>
+                    <div id="sample-requests-list"></div>
+                </div>
+                <div class="chart-container">
+                    <h4><i class="fas fa-envelope"></i> Messages</h4>
+                    <div id="messages-list"></div>
+                </div>
+            </div>
+
+            <!-- PROFILE TAB -->
+            <div id="profile-tab" class="tab hidden">
+                <div id="business-info"></div>
+                <button id="edit-business-btn" class="btn-secondary"><i class="fas fa-edit"></i> Edit Business Profile</button>
+                
+                <!-- Location Management -->
+                <div class="chart-container">
+                    <h4><i class="fas fa-map-marker-alt"></i> Business Location</h4>
+                    <div id="location-map" class="location-map"></div>
+                    <button id="claim-location-btn" class="btn-secondary"><i class="fas fa-map-pin"></i> Claim/Update Location</button>
+                </div>
+                
+                <!-- Geofencing Settings -->
+                <div class="chart-container">
+                    <h4><i class="fas fa-ruler-combined"></i> Discovery Settings</h4>
+                    <div class="slider-container">
+                        <label>Service Radius: <span id="radius-value">10</span> km</label>
+                        <input type="range" id="service-radius" min="1" max="50" value="10" step="1">
+                    </div>
+                    <div class="toggle-switch">
+                        <span><i class="fas fa-store"></i> Open for Business</span>
+                        <label>
+                            <input type="checkbox" id="is-open-toggle" class="toggle-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <button id="save-discovery-settings" class="btn-secondary"><i class="fas fa-save"></i> Save Settings</button>
+                </div>
+                
+                <!-- Visibility Boosting -->
+                <div class="chart-container">
+                    <h4><i class="fas fa-chart-line"></i> Visibility Score</h4>
+                    <div id="visibility-score" style="text-align: center;">
+                        <div style="font-size: 2rem; color: var(--primary);">0/100</div>
+                        <div style="height: 8px; background: #222; border-radius: 4px; margin: 10px 0;">
+                            <div id="visibility-bar" style="width: 0%; height: 100%; background: var(--primary); border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    <div id="visibility-checklist"></div>
+                </div>
+                
+                <button id="change-password-btn" class="btn-secondary"><i class="fas fa-key"></i> Change Password</button>
+                <button id="logout-btn" class="btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                <div style="text-align: center; margin-top: 30px; color: #666; font-size: 0.7rem;">
+                    <p>Lako Vendor | 196 Bula, Tiaong, Quezon</p>
+                    <p>Kyle Brian M. Morillo & Alexander Collin Millicamp</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRODUCT MODAL -->
+        <div id="product-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="product-modal-title"><i class="fas fa-plus"></i> Add Product</h3>
+                    <button class="close-modal"><i class="fas fa-times"></i></button>
+                </div>
+                <form id="product-form">
+                    <div class="form-group">
+                        <label><i class="fas fa-tag"></i> Product Name</label>
+                        <input type="text" id="product-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-align-left"></i> Description</label>
+                        <textarea id="product-description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-tag"></i> Category</label>
+                        <input type="text" id="product-category" class="form-control" placeholder="BBQ, Fishball, Isaw, etc.">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-money-bill"></i> Price (₱)</label>
+                        <input type="number" id="product-price" class="form-control" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-boxes"></i> Minimum Order Quantity</label>
+                        <input type="number" id="product-moq" class="form-control" value="1">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn-primary">Save Product</button>
+                        <button type="button" class="btn-secondary close-modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- BUSINESS MODAL -->
+        <div id="business-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-edit"></i> Edit Business Info</h3>
+                    <button class="close-modal"><i class="fas fa-times"></i></button>
+                </div>
+                <form id="business-form">
+                    <div class="form-group"><label><i class="fas fa-store"></i> Business Name</label><input type="text" id="business-name" class="form-control" required></div>
+                    <div class="form-group"><label><i class="fas fa-map-marker-alt"></i> Address</label><input type="text" id="business-address" class="form-control" required></div>
+                    <div class="form-group"><label><i class="fas fa-phone"></i> Phone</label><input type="tel" id="business-phone" class="form-control"></div>
+                    <div class="form-group"><label><i class="fas fa-envelope"></i> Email</label><input type="email" id="business-email" class="form-control"></div>
+                    <div class="form-group"><label><i class="fas fa-clock"></i> Business Hours</label><input type="text" id="business-hours" class="form-control" placeholder="Mon-Sat 5PM-10PM"></div>
+                    <div class="form-group"><label><i class="fas fa-align-left"></i> Description</label><textarea id="business-description" class="form-control" rows="3"></textarea></div>
+                    <div class="form-group"><label><i class="fas fa-tag"></i> Category</label><input type="text" id="business-category" class="form-control" placeholder="Street Food"></div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn-primary">Save Changes</button>
+                        <button type="button" class="btn-secondary close-modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- REPLY MODAL -->
+        <div id="reply-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-reply"></i> Reply to Review</h3>
+                    <button class="close-modal"><i class="fas fa-times"></i></button>
+                </div>
+                <form id="reply-form">
+                    <div class="form-group">
+                        <label><i class="fas fa-align-left"></i> Your Reply</label>
+                        <textarea id="reply-content" class="form-control" rows="4" placeholder="Thank the customer and address their feedback..."></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn-primary">Post Reply</button>
+                        <button type="button" class="btn-secondary close-modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- SAMPLE REQUEST MODAL -->
+        <div id="sample-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-box-open"></i> Sample Request</h3>
+                    <button class="close-modal"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="sample-details"></div>
+                <div class="modal-footer">
+                    <button id="approve-sample" class="btn-success"><i class="fas fa-check"></i> Approve</button>
+                    <button id="reject-sample" class="btn-danger"><i class="fas fa-times"></i> Reject</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="vendor.js"></script>
+</body>
+</html>
