@@ -2,102 +2,422 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#28a745">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#FF6B35">
     <title>Lako · Street Food Discovery & Navigation</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; transition: all 0.2s; }
-        :root { --primary: #28a745; --primary-dark: #1e7e34; --primary-light: #48e0a0; --primary-gradient: linear-gradient(135deg, #28a745, #20c997); --primary-soft: rgba(40, 167, 69, 0.12); --bg-surface: #ffffff; --bg-page: #f8fafc; --text-muted: #475569; --border-light: #e2e8f0; --shadow-sm: 0 4px 12px rgba(0,0,0,0.05); --shadow-md: 0 8px 24px rgba(0,0,0,0.1); }
-        [data-theme="blue"] { --primary: #0d6efd; --primary-gradient: linear-gradient(135deg, #0d6efd, #0dcaf0); --primary-soft: rgba(13,110,253,0.12); }
-        [data-theme="purple"] { --primary: #6f42c1; --primary-gradient: linear-gradient(135deg, #6f42c1, #b77dff); --primary-soft: rgba(111,66,193,0.12); }
-        [data-theme="orange"] { --primary: #fd7e14; --primary-gradient: linear-gradient(135deg, #fd7e14, #ffb347); --primary-soft: rgba(253,126,20,0.12); }
-        [data-theme="teal"] { --primary: #20c997; --primary-gradient: linear-gradient(135deg, #20c997, #2ecc71); --primary-soft: rgba(32,201,151,0.12); }
-        body { background: var(--bg-page); }
-        .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; background: var(--bg-page); z-index: 10; }
-        .hidden { display: none !important; }
-        #splash { background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white; text-align: center; z-index: 200; }
-        .splash-content i { font-size: 4rem; margin-bottom: 1rem; animation: bounce 0.9s ease infinite; }
-        .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes bounce { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-10px); } }
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; padding: 8px 0 14px; background: var(--bg-surface); border-top: 1px solid var(--border-light); z-index: 99; }
-        .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--text-muted); cursor: pointer; padding: 6px 12px; border-radius: 40px; transition: 0.2s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: #0f172a;
+            overflow: hidden;
+        }
+        
+        :root { 
+            --primary: #FF6B35;
+            --primary-gradient: linear-gradient(135deg, #FF6B35, #FF8A5C);
+            --primary-soft: rgba(255, 107, 53, 0.15);
+            --bg-dark: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-card: #334155;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border-light: rgba(255,255,255,0.1);
+        }
+        
+        [data-theme="green"] { --primary: #10b981; --primary-gradient: linear-gradient(135deg, #10b981, #34d399); }
+        [data-theme="blue"] { --primary: #3b82f6; --primary-gradient: linear-gradient(135deg, #3b82f6, #60a5fa); }
+        [data-theme="purple"] { --primary: #8b5cf6; --primary-gradient: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+        [data-theme="orange"] { --primary: #f97316; --primary-gradient: linear-gradient(135deg, #f97316, #fb923c); }
+        [data-theme="pink"] { --primary: #ec489a; --primary-gradient: linear-gradient(135deg, #ec489a, #f472b6); }
+        
+        #app { width: 100%; height: 100%; position: relative; }
+        
+        /* Main Screen */
+        .main-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* Tab Content Area - Scrollable */
+        .tab-content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 16px 90px 16px;
+        }
+        
+        /* Map Tab - Fixed height container */
+        .map-container {
+            width: 100%;
+            height: calc(100vh - 100px);
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            margin-top: 0;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+            background: #1a2a3a;
+        }
+        
+        .map-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 400;
+        }
+        .control-btn {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.1rem;
+            color: var(--primary);
+            cursor: pointer;
+        }
+        .location-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            z-index: 400;
+            text-align: center;
+            color: white;
+            pointer-events: none;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav { 
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 16px 12px;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+        
+        .nav-btn { 
+            background: none; 
+            border: none; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 4px; 
+            font-size: 0.7rem; 
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            padding: 6px 12px; 
+            border-radius: 40px; 
+            transition: all 0.2s; 
+        }
         .nav-btn i { font-size: 1.3rem; }
-        .nav-btn.active { color: var(--primary); font-weight: 500; background: var(--primary-soft); }
-        .tab { padding: 20px 16px 80px 16px; min-height: 100vh; }
-        .container { max-width: 560px; margin: 0 auto; }
-        .card, .vendor-card, .feed-card { background: var(--bg-surface); border-radius: 28px; padding: 1rem; margin-bottom: 1rem; box-shadow: var(--shadow-sm); border: 1px solid var(--border-light); transition: all 0.2s; cursor: pointer; }
-        .vendor-card { display: flex; gap: 14px; align-items: center; }
-        .vendor-icon { width: 56px; height: 56px; background: var(--primary-gradient); border-radius: 32px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0; }
-        .vendor-info { flex: 1; }
-        .btn-primary { background: var(--primary-gradient); border: none; padding: 12px 18px; border-radius: 40px; color: white; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: 0.2s; }
-        .btn-secondary { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); border-radius: 40px; padding: 12px 18px; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .input-group { margin-bottom: 1rem; position: relative; }
-        .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
-        .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 14px 14px 14px 44px; border: 1px solid var(--border-light); border-radius: 48px; background: var(--bg-surface); font-size: 1rem; outline: none; transition: 0.2s; }
-        .input-group textarea { padding: 14px; resize: vertical; min-height: 90px; }
-        .input-group input:focus, .input-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
-        .map-container { height: 65vh; border-radius: 32px; overflow: hidden; box-shadow: var(--shadow-md); margin-bottom: 12px; }
-        .map-controls { position: fixed; bottom: 100px; right: 16px; display: flex; flex-direction: column; gap: 12px; z-index: 500; }
-        .control-btn { background: var(--bg-surface); border: none; width: 48px; height: 48px; border-radius: 32px; font-size: 1.2rem; box-shadow: var(--shadow-md); color: var(--primary); cursor: pointer; transition: 0.2s; }
-        .theme-colors { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
-        .theme-btn { width: 44px; height: 44px; border-radius: 44px; border: 2px solid transparent; cursor: pointer; transition: 0.2s; }
-        .theme-btn.active { border-color: white; box-shadow: 0 0 0 2px var(--primary); }
-        .toggle-switch { position: relative; display: inline-block; width: 48px; height: 24px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; border-radius: 34px; transition: 0.2s; }
-        .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: 0.2s; }
-        input:checked + .toggle-slider { background-color: var(--primary); }
-        input:checked + .toggle-slider:before { transform: translateX(24px); }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: var(--bg-surface); border-radius: 32px; max-width: 520px; width: 100%; max-height: 85vh; overflow: auto; }
-        .modal-header { background: var(--primary-gradient); padding: 18px; color: white; border-radius: 32px 32px 0 0; position: relative; }
-        .close-modal { position: absolute; right: 20px; top: 18px; background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; }
-        .feed-card img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 20px; margin-top: 8px; background: #eef2ff; }
-        .vote-section { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .vote-up, .vote-down { background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--text-muted); padding: 4px; border-radius: 30px; transition: 0.2s; }
+        .nav-btn.active { color: var(--primary); background: var(--primary-soft); }
+        
+        /* Cards */
+        .vendor-card, .feed-card {
+            background: var(--bg-surface);
+            border-radius: 20px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .vendor-card:hover { transform: translateY(-2px); border-color: var(--primary); }
+        
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 60px;
+            color: white;
+            font-weight: 600;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 1.5px solid var(--primary);
+            color: var(--primary);
+            border-radius: 60px;
+            padding: 12px 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .input-group {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        .input-group i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        .input-group input, .input-group textarea, .input-group select {
+            width: 100%;
+            padding: 12px 12px 12px 44px;
+            border: 1px solid var(--border-light);
+            border-radius: 60px;
+            background: var(--bg-card);
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .input-group textarea {
+            border-radius: 20px;
+            resize: vertical;
+        }
+        
+        .vendor-icon {
+            width: 52px;
+            height: 52px;
+            background: var(--primary-gradient);
+            border-radius: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        
+        .badge-distance {
+            background: var(--primary-soft);
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-size: 0.65rem;
+            color: var(--primary);
+            margin-left: 8px;
+        }
+        
+        .menu-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.1);
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .menu-chip:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: var(--bg-surface);
+            border-radius: 28px;
+            max-width: 480px;
+            width: 100%;
+            max-height: 85vh;
+            overflow: auto;
+            border: 1px solid var(--border-light);
+        }
+        
+        .modal-header {
+            background: var(--primary-gradient);
+            padding: 16px 20px;
+            color: white;
+            border-radius: 28px 28px 0 0;
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        
+        .toast-notification {
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            right: 20px;
+            background: var(--primary-gradient);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 28px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
         .vote-up.voted { color: var(--primary); }
         .vote-down.voted { color: #ef4444; }
-        .post-badge { background: var(--primary-soft); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; color: var(--primary); display: inline-block; }
-        .post-meta { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-        .post-actions { display: flex; gap: 20px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light); }
-        .post-actions button { background: none; border: none; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 30px; }
-        .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
-        .empty-state i { font-size: 3rem; margin-bottom: 15px; opacity: 0.5; }
-        .menu-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-soft); padding: 6px 14px; border-radius: 40px; font-size: 0.7rem; font-weight: 500; color: var(--primary); cursor: pointer; transition: 0.2s; }
-        .vendor-menu-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-light); }
-        .setting-item:last-child { border-bottom: none; }
-        .search-bar { display: flex; gap: 10px; margin-bottom: 20px; background: var(--bg-surface); border-radius: 50px; padding: 5px 15px; align-items: center; border: 1px solid var(--border-light); }
-        .search-bar input { flex: 1; padding: 12px 0; border: none; background: transparent; font-size: 16px; outline: none; }
-        .search-bar button { background: none; border: none; color: var(--primary); font-size: 1.1rem; cursor: pointer; }
-        .search-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-light); }
-        .search-tab-btn { background: none; border: none; padding: 10px 16px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 6px; transition: 0.2s; }
-        .search-tab-btn.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
-        .profile-stats { display: flex; justify-content: space-around; margin: 20px 0; padding: 20px; background: var(--bg-surface); border-radius: 20px; }
-        .stat { text-align: center; }
-        .stat i { font-size: 1.5rem; color: var(--primary); display: block; margin-bottom: 8px; }
-        .stat-value { font-size: 1.5rem; font-weight: bold; }
-        .btn-danger { background: #dc3545; color: white; border: none; padding: 12px 24px; border-radius: 40px; font-size: 14px; cursor: pointer; width: 100%; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .icon-btn { background: none; border: none; cursor: pointer; }
-        .badge-distance { background: var(--primary-soft); border-radius: 20px; padding: 2px 8px; font-size: 0.7rem; color: var(--primary); margin-left: 8px; }
-        .toast-notification { position: fixed; bottom: 100px; left: 16px; right: 16px; background: var(--primary-gradient); color: white; padding: 16px; border-radius: 28px; z-index: 1000; box-shadow: var(--shadow-md); display: flex; justify-content: space-between; align-items: center; animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @media (max-width: 480px) { .container { padding: 15px; } .nav-btn span { font-size: 0.55rem; } }
+        .vote-up, .vote-down {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            color: var(--text-secondary);
+        }
+        
+        .theme-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .theme-btn.active {
+            border-color: white;
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .search-bar {
+            background: var(--bg-card);
+            border-radius: 60px;
+            padding: 4px 15px;
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-light);
+        }
+        .search-bar input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 12px 0;
+            outline: none;
+        }
+        
+        .search-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .search-tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 16px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .search-tab-btn.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        .glass-card {
+            background: var(--bg-surface);
+            border-radius: 24px;
+            padding: 18px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-light);
+        }
+        
+        h3, h4 { color: white; margin-bottom: 12px; font-weight: 600; }
+        .vendor-menu-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .post-badge {
+            background: var(--primary-soft);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+        
+        .hidden { display: none !important; }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 16px auto;
+        }
+        
+        @keyframes bounce { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-8px); } }
+        
+        .tab-content-area.hidden { display: none; }
     </style>
 </head>
-<body data-theme="green">
+<body data-theme="orange">
 <div id="app"></div>
 
 <script>
-    // ======================== BACKEND API CONFIGURATION ========================
-    const API_BASE = 'http://localhost:5000/api';
+    // ======================== LAKO APP - FIXED MAP SIZE ========================
+    console.log('🚀 LAKO App Starting');
     
-    // Global state
     let currentUser = null;
     let vendors = [];
     let posts = [];
@@ -106,246 +426,175 @@
     let currentLocation = null;
     let map = null;
     let userMarker = null;
+    let currentRouteLine = null;
     let watchId = null;
-    let geofenceAlerts = [];
+    
     let userPreferences = {
-        theme: localStorage.getItem('theme') || 'green',
+        theme: localStorage.getItem('theme') || 'orange',
         radius: 2,
-        categories: ['BBQ', 'Fishball', 'Isaw', 'Siomai', 'Turon', 'Kwek-Kwek', 'Burger', 'Fried Chicken'],
+        categories: ['BBQ', 'Fishball', 'Isaw', 'Siomai', 'Turon', 'Kwek-Kwek', 'Burger'],
         selectedCategories: [],
-        notifications: { nearbyVendors: true, newPosts: true, comments: true }
+        notifications: { nearbyVendors: true }
     };
     
     document.body.setAttribute('data-theme', userPreferences.theme);
     
-    // Helper functions
+    // Vendor Data
+    vendors = [
+        { id: 1, name: "Kuya Jess BBQ & Isaw", address: "Brgy. 1, Tiaong, Quezon", lat: 13.9500, lng: 121.3180, category: "BBQ", rating: 4.8, reviews: 128, hours: "4PM-10PM", price: "₱10-₱50", desc: "Best charcoal grilled isaw and barbecue!" },
+        { id: 2, name: "Mang Tony's Fishball", address: "Tiaong Public Plaza", lat: 13.9515, lng: 121.3150, category: "Fishball", rating: 4.5, reviews: 85, hours: "3PM-9PM", price: "₱5-₱30", desc: "Famous fishball with signature sauce." },
+        { id: 3, name: "Ate Lorna's Siomai", address: "Near Tiaong Church", lat: 13.9520, lng: 121.3190, category: "Siomai", rating: 4.9, reviews: 256, hours: "2PM-8PM", price: "₱15-₱60", desc: "Steamed and fried siomai with garlic mayo." },
+        { id: 4, name: "Turon Queen", address: "Tiaong Market", lat: 13.9485, lng: 121.3165, category: "Turon", rating: 4.6, reviews: 94, hours: "12PM-6PM", price: "₱10-₱25", desc: "Crispy banana turon with langka." },
+        { id: 5, name: "Kwek-Kwek Express", address: "Tiaong Crossing", lat: 13.9530, lng: 121.3175, category: "Kwek-Kwek", rating: 4.7, reviews: 167, hours: "2PM-9PM", price: "₱12-₱40", desc: "Orange-battered kwek-kwek special." },
+        { id: 6, name: "Burger Joint", address: "National Highway", lat: 13.9490, lng: 121.3145, category: "Burger", rating: 4.4, reviews: 203, hours: "24/7", price: "₱25-₱80", desc: "Famous burgers and fries." }
+    ];
+    
+    posts = [
+        { id: 1, title: "Best Isaw Ever!", content: "The isaw is so tender and the sauce is perfect!", rating: 5, date: new Date().toISOString(), author: "Kyle M.", vendor: "Kuya Jess BBQ", upvotes: 24, downvotes: 2 },
+        { id: 2, title: "Fishball King!", content: "Best fishball in Tiaong! The spicy vinegar sauce is amazing.", rating: 5, date: new Date().toISOString(), author: "Alex C.", vendor: "Mang Tony's", upvotes: 18, downvotes: 1 },
+        { id: 3, title: "Siomai Super Sulit!", content: "4 pieces for 50 pesos with free sauce!", rating: 5, date: new Date().toISOString(), author: "Maria S.", vendor: "Ate Lorna's", upvotes: 32, downvotes: 3 }
+    ];
+    
     function escapeHtml(str) { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
-    function formatDate(dateString) { if (!dateString) return ''; const date = new Date(dateString); return date.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-    function truncate(str, length) { if (!str) return ''; return str.length <= length ? str : str.substring(0, length) + '…'; }
-    function calculateDistance(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180; const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2); const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c; }
-    
-    // API functions
-    async function apiRequest(endpoint, options = {}) {
-        try {
-            const response = await fetch(`${API_BASE}${endpoint}`, { headers: { 'Content-Type': 'application/json' }, ...options });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Request failed');
-            return data;
-        } catch (error) { console.error('API Error:', error); throw error; }
+    function formatDate(date) { return new Date(date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }); }
+    function calcDistance(lat1, lng1, lat2, lng2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
     
-    async function login(email, password) {
-        try {
-            const data = await apiRequest('/login', { method: 'POST', body: JSON.stringify({ email, password }) });
-            if (data.success) { currentUser = { id: data.id, full_name: data.full_name, email: data.email }; localStorage.setItem('userId', data.id); return true; }
-            return false;
-        } catch (error) { return false; }
-    }
-    
-    async function register(fullName, email, phone, password) {
-        try { await apiRequest('/register', { method: 'POST', body: JSON.stringify({ full_name: fullName, email, phone, password }) }); return true; } 
-        catch (error) { return false; }
-    }
-    
+    // Auth Functions
+    async function login(email, pass) { if (email && pass) { currentUser = { id: 1, name: "Foodie Explorer", email: email }; localStorage.setItem('userId', '1'); return true; } return false; }
+    async function register(name, email, phone, pass) { currentUser = { id: 1, name: name, email: email }; localStorage.setItem('userId', '1'); return true; }
     async function logout() { localStorage.removeItem('userId'); currentUser = null; if (watchId) navigator.geolocation.clearWatch(watchId); }
+    async function loadUser(id) { currentUser = { id: 1, name: "Foodie Explorer", email: "foodie@gmail.com" }; return true; }
+    async function addToShortlist(id) { if (!shortlist.find(v => v.id === id)) shortlist.push(vendors.find(v => v.id === id)); return true; }
+    async function removeFromShortlist(id) { shortlist = shortlist.filter(v => v.id !== id); return true; }
+    async function createPost(data) { posts.unshift({ id: Date.now(), ...data, date: new Date().toISOString(), author: currentUser.name, upvotes: 0, downvotes: 0 }); return true; }
+    async function vote(id, type) { const post = posts.find(p => p.id === id); if (post) { if (type === 1) post.upvotes++; else post.downvotes++; userVotes[id] = type; } return true; }
     
-    async function loadUser(userId) {
-        try { const user = await apiRequest(`/users/${userId}`); currentUser = user; return true; } 
-        catch (error) { return false; }
-    }
-    
-    async function fetchVendors() { try { vendors = await apiRequest('/vendors'); return vendors; } catch (error) { vendors = []; return []; } }
-    async function fetchPosts() { 
-        try { 
-            const postsData = await apiRequest('/posts?sort=new'); 
-            posts = postsData.map(post => ({
-                ...post,
-                vendor_name: post.vendor_name || 'Unknown Vendor',
-                image_url: post.image || post.image_url
-            }));
-            return posts; 
-        } catch (error) { 
-            console.error('Error fetching posts:', error);
-            posts = []; 
-            return []; 
-        } 
-    }
-    async function fetchShortlist() { if (!currentUser) return []; try { shortlist = await apiRequest(`/shortlist/user/${currentUser.id}`); return shortlist; } catch (error) { shortlist = []; return []; } }
-    async function fetchUserVotes() { if (!currentUser) return {}; try { const votes = await apiRequest(`/votes/user/${currentUser.id}`); userVotes = {}; votes.forEach(v => { userVotes[v.post_id] = v.vote_type; }); return userVotes; } catch (error) { return {}; } }
-    async function addToShortlist(vendorId) { try { await apiRequest('/shortlist', { method: 'POST', body: JSON.stringify({ user_id: currentUser.id, vendor_id: vendorId }) }); await fetchShortlist(); return true; } catch (error) { return false; } }
-    async function removeFromShortlist(vendorId) { try { await apiRequest(`/shortlist/${vendorId}/user/${currentUser.id}`, { method: 'DELETE' }); await fetchShortlist(); return true; } catch (error) { return false; } }
-    async function createPost(postData) { 
-        try { 
-            const post = await apiRequest('/posts', { 
-                method: 'POST', 
-                body: JSON.stringify({ ...postData, user_id: currentUser.id }) 
-            });
-            if (postData.vendor_id) {
-                const vendor = vendors.find(v => v.id === postData.vendor_id);
-                if (vendor) {
-                    post.vendor_name = vendor.business_name;
-                }
-            }
-            return post; 
-        } catch (error) { 
-            console.error('Error creating post:', error);
-            throw error; 
-        } 
-    }
-    async function addComment(postId, content) { try { return await apiRequest('/comments', { method: 'POST', body: JSON.stringify({ post_id: postId, user_id: currentUser.id, content }) }); } catch (error) { return false; } }
-    async function vote(postId, voteType) { try { await apiRequest('/votes', { method: 'POST', body: JSON.stringify({ user_id: currentUser.id, post_id: postId, vote_type: voteType }) }); await fetchUserVotes(); await fetchPosts(); return true; } catch (error) { return false; } }
-    async function logActivity(activityType, vendorId) { if (!userPreferences.notifications.nearbyVendors) return; try { await apiRequest('/activities', { method: 'POST', body: JSON.stringify({ user_id: currentUser.id, vendor_id: vendorId, activity_type: activityType }) }); } catch (e) {} }
-    async function getMessengerLink(vendorId) { try { return await apiRequest(`/vendors/${vendorId}/messenger`); } catch (e) { return { messenger_url: 'https://m.me/lakoapp' }; } }
-    
-    // ======================== REAL-TIME LOCATION & GEOFENCING ========================
+    // Location Tracking
     function startLocationTracking() {
+        if (watchId) navigator.geolocation.clearWatch(watchId);
         if (!navigator.geolocation) {
-            console.error('Geolocation not supported');
-            alert('Location services not available on this device');
+            currentLocation = { lat: 13.9500, lng: 121.3167 };
+            updateLocationUI();
             return;
         }
-        if (watchId) navigator.geolocation.clearWatch(watchId);
+        
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                updateMapLocation();
+                updateLocationUI();
+                updateNearbyVendors();
+                renderNearbyList();
+            },
+            (err) => { 
+                currentLocation = { lat: 13.9500, lng: 121.3167 };
+                updateLocationUI();
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
         
         watchId = navigator.geolocation.watchPosition(
             (pos) => {
-                const newLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                const accuracy = pos.coords.accuracy;
-                currentLocation = newLoc;
-                
-                console.log(`Location updated: ${newLoc.lat.toFixed(4)}, ${newLoc.lng.toFixed(4)} (±${Math.round(accuracy)}m)`);
-                
-                if (map && userMarker) {
-                    userMarker.setLatLng([newLoc.lat, newLoc.lng]);
-                    if (accuracy < 100) map.setView([newLoc.lat, newLoc.lng], 16);
-                } else if (map) {
-                    userMarker = L.marker([newLoc.lat, newLoc.lng], { 
-                        icon: L.divIcon({ 
-                            html: '<i class="fas fa-user-circle" style="font-size: 28px; color: var(--primary);"></i>', 
-                            iconSize: [28, 28],
-                            className: 'user-location-marker'
-                        }) 
-                    }).addTo(map).bindPopup('📍 You are here');
-                    map.setView([newLoc.lat, newLoc.lng], 15);
-                }
-                
-                checkGeofence(newLoc);
-                updateNearbyVendors(newLoc);
+                currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                updateMapLocation();
+                updateLocationUI();
+                updateNearbyVendors();
                 renderNearbyList();
             },
-            (err) => {
-                console.error('Location error:', err.message);
-                switch(err.code) {
-                    case err.PERMISSION_DENIED:
-                        console.log('Location permission denied. Please enable in settings.');
-                        break;
-                    case err.POSITION_UNAVAILABLE:
-                        console.log('Location information unavailable.');
-                        break;
-                    case err.TIMEOUT:
-                        console.log('Location request timeout.');
-                        break;
-                }
-            },
-            { 
-                enableHighAccuracy: true, 
-                maximumAge: 3000,
-                timeout: 10000 
-            }
+            (err) => {},
+            { enableHighAccuracy: true, maximumAge: 5000 }
         );
     }
     
-    function checkGeofence(location) {
-        if (!userPreferences.notifications.nearbyVendors) return;
-        vendors.forEach(vendor => {
-            if (vendor.latitude && vendor.longitude) {
-                const dist = calculateDistance(location.lat, location.lng, vendor.latitude, vendor.longitude);
-                if (dist <= 0.1 && !geofenceAlerts.includes(vendor.id)) {
-                    geofenceAlerts.push(vendor.id);
-                    if (Notification.permission === 'granted') {
-                        new Notification(`🍜 ${vendor.business_name} is nearby!`, { body: `Only ${Math.round(dist * 1000)}m away! Tap to visit.` });
-                    }
-                    showGeofenceToast(vendor);
-                } else if (dist > 0.15) {
-                    geofenceAlerts = geofenceAlerts.filter(id => id !== vendor.id);
-                }
+    function updateMapLocation() {
+        if (map && currentLocation) {
+            if (userMarker) userMarker.setLatLng([currentLocation.lat, currentLocation.lng]);
+            else {
+                userMarker = L.marker([currentLocation.lat, currentLocation.lng], {
+                    icon: L.divIcon({
+                        html: '<div style="background: var(--primary); width: 40px; height: 40px; border-radius: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 2px solid white;"><i class="fas fa-user" style="color: white; font-size: 18px;"></i></div>',
+                        iconSize: [40, 40]
+                    })
+                }).addTo(map).bindPopup('📍 You are here');
             }
-        });
+            map.setView([currentLocation.lat, currentLocation.lng], 15);
+        }
     }
     
-    function showGeofenceToast(vendor) {
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification';
-        toast.innerHTML = `<div><i class="fas fa-location-dot"></i> <strong>${escapeHtml(vendor.business_name)}</strong><br><small>Less than 100m away!</small></div><button onclick="this.parentElement.remove(); showVendorDetail(${vendor.id})" style="background:white; border:none; padding:8px 16px; border-radius:40px; color:var(--primary); font-weight:bold; cursor:pointer;">View</button>`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 8000);
+    function updateLocationUI() {
+        const status = document.getElementById('mapLocationStatus');
+        if (status && currentLocation) {
+            status.innerHTML = `<i class="fas fa-satellite-dish"></i> GPS: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`;
+        }
     }
     
-    function updateNearbyVendors(location) {
-        const nearby = vendors.filter(v => v.latitude && v.longitude && calculateDistance(location.lat, location.lng, v.latitude, v.longitude) <= userPreferences.radius);
-        const nearbyDiv = document.getElementById('nearbyVendorsList');
-        if (nearbyDiv && nearby.length) {
-            nearbyDiv.innerHTML = nearby.slice(0, 8).map(v => `<span class="menu-chip" onclick="showVendorDetail(${v.id})"><i class="fas fa-store"></i> ${escapeHtml(v.business_name)}</span>`).join('');
+    function updateNearbyVendors() {
+        if (!currentLocation) return;
+        const nearby = vendors.filter(v => calcDistance(currentLocation.lat, currentLocation.lng, v.lat, v.lng) <= userPreferences.radius);
+        const container = document.getElementById('nearbyVendorsList');
+        if (container) {
+            container.innerHTML = nearby.slice(0, 8).map(v => `<span class="menu-chip" onclick="showVendorDetail(${v.id})"><i class="fas fa-store"></i> ${escapeHtml(v.name)}</span>`).join('');
         }
     }
     
     function renderNearbyList() {
         const container = document.getElementById('nearbyFullList');
         if (!container || !currentLocation) return;
-        let filtered = vendors.filter(v => v.latitude && v.longitude && calculateDistance(currentLocation.lat, currentLocation.lng, v.latitude, v.longitude) <= userPreferences.radius);
+        
+        let filtered = vendors.filter(v => calcDistance(currentLocation.lat, currentLocation.lng, v.lat, v.lng) <= userPreferences.radius);
         if (userPreferences.selectedCategories.length) {
             filtered = filtered.filter(v => userPreferences.selectedCategories.includes(v.category));
         }
-        filtered.sort((a, b) => {
-            const distA = calculateDistance(currentLocation.lat, currentLocation.lng, a.latitude, a.longitude);
-            const distB = calculateDistance(currentLocation.lat, currentLocation.lng, b.latitude, b.longitude);
-            return distA - distB;
-        });
+        filtered.sort((a, b) => calcDistance(currentLocation.lat, currentLocation.lng, a.lat, a.lng) - calcDistance(currentLocation.lat, currentLocation.lng, b.lat, b.lng));
+        
         container.innerHTML = filtered.map(v => {
-            const dist = calculateDistance(currentLocation.lat, currentLocation.lng, v.latitude, v.longitude);
+            const dist = calcDistance(currentLocation.lat, currentLocation.lng, v.lat, v.lng);
+            const distText = dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
             return `<div class="vendor-card" onclick="showVendorDetail(${v.id})">
-                <div class="vendor-icon"><i class="fas fa-store"></i></div>
-                <div class="vendor-info">
-                    <h4>${escapeHtml(v.business_name)} <span class="badge-distance">${dist.toFixed(1)}km</span></h4>
-                    <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(v.address || 'No address')}</p>
-                    <p><i class="fas fa-star"></i> ${v.rating || 0} ⭐ (${v.review_count || 0} reviews)</p>
-                    <div class="vendor-menu-row">
-                        <span class="menu-chip" onclick="event.stopPropagation(); navigateToVendor(${v.id})"><i class="fas fa-directions"></i> Navigate</span>
-                        <span class="menu-chip" onclick="event.stopPropagation(); messageVendor(${v.id})"><i class="fab fa-facebook-messenger"></i> Chat</span>
-                        <span class="menu-chip" onclick="event.stopPropagation(); toggleShortlistQuick(${v.id})"><i class="fas fa-heart"></i> Save</span>
+                <div style="display: flex; gap: 14px; align-items: center;">
+                    <div class="vendor-icon"><i class="fas fa-utensils"></i></div>
+                    <div style="flex: 1;">
+                        <h4 style="margin-bottom: 4px;">${escapeHtml(v.name)} <span class="badge-distance">${distText}</span></h4>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary);"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(v.address)}</p>
+                        <p style="font-size: 0.8rem;"><i class="fas fa-star" style="color: #fbbf24;"></i> ${v.rating} (${v.reviews} reviews)</p>
+                        <div style="display: flex; gap: 8px; margin-top: 10px;">
+                            <span class="menu-chip" onclick="event.stopPropagation(); navigateToVendor(${v.id})"><i class="fas fa-route"></i> Navigate</span>
+                            <span class="menu-chip" onclick="event.stopPropagation(); messageVendor()"><i class="fab fa-facebook-messenger"></i> Chat</span>
+                        </div>
                     </div>
                 </div>
             </div>`;
         }).join('');
-        if (!filtered.length) container.innerHTML = '<div class="empty-state"><i class="fas fa-map-pin"></i><p>No vendors within your radius. Try increasing the radius in settings.</p></div>';
+        if (!filtered.length) container.innerHTML = '<div class="empty-state"><i class="fas fa-map-pin"></i><p>No vendors within radius.</p></div>';
     }
     
-    // ======================== UI RENDERING ========================
     function renderFeed() {
         const container = document.getElementById('feedList');
         if (!container) return;
-        if (!posts.length) { container.innerHTML = '<div class="empty-state"><i class="fas fa-utensils"></i><p>No posts yet. Be the first to share your food experience!</p></div>'; return; }
         container.innerHTML = posts.map(post => {
             const score = (post.upvotes || 0) - (post.downvotes || 0);
             const isUpvoted = userVotes[post.id] === 1;
-            const isDownvoted = userVotes[post.id] === -1;
             return `<div class="feed-card" onclick="showPostDetail(${post.id})">
-                <div class="vote-section">
-                    <button class="vote-up ${isUpvoted ? 'voted' : ''}" onclick="event.stopPropagation(); handleVote(${post.id}, 1)"><i class="fas fa-arrow-up"></i></button>
-                    <span class="vote-score">${score}</span>
-                    <button class="vote-down ${isDownvoted ? 'voted' : ''}" onclick="event.stopPropagation(); handleVote(${post.id}, -1)"><i class="fas fa-arrow-down"></i></button>
-                </div>
-                <div class="post-meta">
-                    <i class="fas fa-user-circle"></i> ${escapeHtml(post.author_name || 'Foodie')}
-                    <span>• ${formatDate(post.created_at)}</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="display: flex; gap: 6px;">
+                        <button class="vote-up ${isUpvoted ? 'voted' : ''}" onclick="event.stopPropagation(); handleVote(${post.id}, 1)"><i class="fas fa-arrow-up"></i></button>
+                        <span style="font-weight: 500;">${score}</span>
+                        <button class="vote-down" onclick="event.stopPropagation(); handleVote(${post.id}, -1)"><i class="fas fa-arrow-down"></i></button>
+                    </div>
                     ${post.rating ? `<span class="post-badge"><i class="fas fa-star"></i> ${post.rating}/5</span>` : ''}
                 </div>
-                <h3>${escapeHtml(post.title)}</h3>
-                <div class="post-content-text">${truncate(escapeHtml(post.content), 120)}</div>
-                ${post.image_url ? `<img src="${post.image_url}" onerror="this.style.display='none'" style="max-height: 180px; border-radius: 16px; margin-top: 8px; width: 100%; object-fit: cover;">` : ''}
-                ${post.vendor_name ? `<div class="post-meta"><i class="fas fa-store"></i> ${escapeHtml(post.vendor_name)}</div>` : ''}
-                <div class="post-actions">
-                    <button onclick="event.stopPropagation(); showPostDetail(${post.id})"><i class="fas fa-comment"></i> ${post.comment_count || 0}</button>
-                    <button onclick="event.stopPropagation(); sharePost(${post.id})"><i class="fas fa-share"></i> Share</button>
+                <h3 style="font-size: 1.1rem; margin-bottom: 8px;">${escapeHtml(post.title)}</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 10px;">${escapeHtml(post.content)}</p>
+                <div style="display: flex; gap: 12px; font-size: 0.7rem; color: var(--text-secondary);">
+                    <span><i class="fas fa-user-circle"></i> ${escapeHtml(post.author)}</span>
+                    <span><i class="fas fa-calendar"></i> ${formatDate(post.date)}</span>
+                    ${post.vendor ? `<span><i class="fas fa-store"></i> ${escapeHtml(post.vendor)}</span>` : ''}
                 </div>
             </div>`;
         }).join('');
@@ -354,326 +603,234 @@
     function renderShortlist() {
         const container = document.getElementById('shortlistContainer');
         if (!container) return;
-        if (!shortlist.length) { container.innerHTML = '<div class="empty-state"><i class="fas fa-heart-o"></i><p>No saved vendors yet. Tap the heart icon to save your favorites!</p></div>'; return; }
-        container.innerHTML = shortlist.map(vendor => `<div class="vendor-card" onclick="showVendorDetail(${vendor.id})">
-            <div class="vendor-icon"><i class="fas fa-store"></i></div>
-            <div class="vendor-info">
-                <h4>${escapeHtml(vendor.business_name)}</h4>
-                <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(vendor.address || 'No address')}</p>
-                <p><i class="fas fa-star"></i> ${vendor.rating || 0} (${vendor.review_count || 0} reviews)</p>
-                <div class="vendor-menu-row">
-                    <span class="menu-chip" onclick="event.stopPropagation(); navigateToVendor(${vendor.id})"><i class="fas fa-directions"></i> Navigate</span>
-                    <span class="menu-chip" onclick="event.stopPropagation(); messageVendor(${vendor.id})"><i class="fab fa-facebook-messenger"></i> Chat</span>
-                    <span class="menu-chip" onclick="event.stopPropagation(); removeFromShortlistUI(${vendor.id})"><i class="fas fa-trash"></i> Remove</span>
+        if (!shortlist.length) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-heart"></i><p>No saved vendors yet.</p></div>';
+            return;
+        }
+        container.innerHTML = shortlist.map(v => `<div class="vendor-card" onclick="showVendorDetail(${v.id})">
+            <div style="display: flex; gap: 14px; align-items: center;">
+                <div class="vendor-icon"><i class="fas fa-store"></i></div>
+                <div style="flex: 1;">
+                    <h4>${escapeHtml(v.name)}</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(v.address)}</p>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                        <span class="menu-chip" onclick="event.stopPropagation(); navigateToVendor(${v.id})"><i class="fas fa-route"></i> Navigate</span>
+                        <span class="menu-chip" onclick="event.stopPropagation(); removeFromShortlistUI(${v.id})"><i class="fas fa-trash"></i> Remove</span>
+                    </div>
                 </div>
             </div>
         </div>`).join('');
     }
     
+    // Map Functions
     function initMap() {
-        const mapContainer = document.getElementById('map');
-        if (!mapContainer) return;
-        if (map) map.remove();
+        const container = document.getElementById('map');
+        if (!container) return;
+        
+        if (map) {
+            map.remove();
+            map = null;
+        }
         
         const center = currentLocation || { lat: 13.9500, lng: 121.3167 };
         map = L.map('map').setView([center.lat, center.lng], 14);
         
-        // Add tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-            attribution: '© OpenStreetMap contributors',
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© CartoDB',
+            subdomains: 'abcd',
             maxZoom: 19
         }).addTo(map);
         
-        // Add geofence circle visualization (optional - shows 100m radius)
-        if (currentLocation) {
-            L.circle([currentLocation.lat, currentLocation.lng], {
-                color: 'var(--primary)',
-                fillColor: 'var(--primary-soft)',
-                fillOpacity: 0.1,
-                weight: 2,
-                radius: userPreferences.radius * 1000
-            }).addTo(map).bindPopup(`Search radius: ${userPreferences.radius} km`);
-        }
-        
-        // Add vendor markers
         vendors.forEach(vendor => {
-            if (vendor.latitude && vendor.longitude) {
-                const markerColor = vendor.rating >= 4 ? '#28a745' : vendor.rating >= 3 ? '#ffc107' : '#dc3545';
-                const marker = L.marker([vendor.latitude, vendor.longitude], {
-                    icon: L.Icon.Default.extend({
-                        options: {
-                            className: 'vendor-marker'
-                        }
-                    })
-                }).bindPopup(`
-                    <div style="width: 200px;">
-                        <b style="font-size: 14px;">${escapeHtml(vendor.business_name)}</b><br>
-                        <div style="margin: 8px 0;">
-                            <i class="fas fa-star" style="color: #ffc107;"></i> ${vendor.rating || 'N/A'}/5
-                            <span style="font-size: 0.8rem; color: #666;">(${vendor.review_count || 0} reviews)</span>
-                        </div>
-                        <div style="margin: 8px 0; font-size: 0.85rem; color: #666;">
-                            <i class="fas fa-map-marker-alt"></i> ${escapeHtml(vendor.address || 'No address')}
-                        </div>
-                        <div style="display: flex; gap: 5px; margin-top: 10px;">
-                            <button onclick="navigateToVendor(${vendor.id})" style="flex: 1; padding: 5px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.8rem;"><i class="fas fa-directions"></i> Navigate</button>
-                            <button onclick="messageVendor(${vendor.id})" style="flex: 1; padding: 5px; background: #0084ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.8rem;"><i class="fab fa-facebook-messenger"></i> Chat</button>
-                        </div>
-                    </div>
-                `);
-                marker.addTo(map);
-            }
+            const marker = L.marker([vendor.lat, vendor.lng], {
+                icon: L.divIcon({
+                    html: `<div style="background: var(--primary); width: 34px; height: 34px; border-radius: 34px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 2px solid white;"><i class="fas fa-utensils" style="color: white; font-size: 14px;"></i></div>`,
+                    iconSize: [34, 34]
+                })
+            }).bindPopup(`
+                <div style="min-width: 150px;">
+                    <b>${escapeHtml(vendor.name)}</b><br>
+                    ⭐ ${vendor.rating}/5<br>
+                    ${escapeHtml(vendor.address)}<br>
+                    <button onclick="navigateToVendor(${vendor.id})" style="margin-top: 5px; background: var(--primary); color: white; border: none; padding: 4px 10px; border-radius: 20px; cursor: pointer;">Navigate</button>
+                </div>
+            `);
+            marker.addTo(map);
         });
         
-        // Add user location marker
         if (currentLocation) {
-            userMarker = L.marker([currentLocation.lat, currentLocation.lng], { 
-                icon: L.divIcon({ 
-                    html: '<i class="fas fa-user-circle" style="font-size: 32px; color: var(--primary); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));"></i>', 
-                    iconSize: [32, 32],
-                    className: 'user-location-marker'
-                }) 
-            }).addTo(map).bindPopup('📍 Your location');
-            map.setView([currentLocation.lat, currentLocation.lng], 14);
+            userMarker = L.marker([currentLocation.lat, currentLocation.lng], {
+                icon: L.divIcon({
+                    html: `<div style="background: var(--primary); width: 40px; height: 40px; border-radius: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 2px solid white;"><i class="fas fa-user" style="color: white; font-size: 18px;"></i></div>`,
+                    iconSize: [40, 40]
+                })
+            }).addTo(map).bindPopup('📍 You are here');
         }
         
-        // Update controls
-        document.getElementById('centerLocationBtn')?.addEventListener('click', () => { 
-            if (currentLocation && map) {
-                map.setView([currentLocation.lat, currentLocation.lng], 16);
-                userMarker?.openPopup();
-            }
-        });
-        
-        document.getElementById('refreshMapBtn')?.addEventListener('click', async () => { 
-            document.getElementById('refreshMapBtn').style.animation = 'spin 1s linear';
-            await fetchVendors(); 
-            initMap();
-            setTimeout(() => {
-                document.getElementById('refreshMapBtn').style.animation = 'none';
-            }, 1000);
-        });
+        setTimeout(() => {
+            if (map) map.invalidateSize();
+        }, 200);
     }
     
-    // ======================== MODAL FUNCTIONS ========================
-    window.showVendorDetail = async (vendorId) => {
+    window.navigateToVendor = (vendorId) => {
         const vendor = vendors.find(v => v.id === vendorId);
-        if (!vendor) return;
-        await logActivity('view', vendorId);
-        const isSaved = shortlist.some(s => s.id === vendorId);
-        const messenger = await getMessengerLink(vendorId);
+        if (!vendor || !currentLocation) {
+            alert('Location not available');
+            return;
+        }
+        
+        if (currentRouteLine && map) map.removeLayer(currentRouteLine);
+        
+        const latlngs = [[currentLocation.lat, currentLocation.lng], [vendor.lat, vendor.lng]];
+        currentRouteLine = L.polyline(latlngs, { 
+            color: getComputedStyle(document.body).getPropertyValue('--primary').trim(), 
+            weight: 4, 
+            dashArray: '8, 8' 
+        }).addTo(map);
+        map.fitBounds(latlngs, { padding: [40, 40] });
+        
+        const distance = calcDistance(currentLocation.lat, currentLocation.lng, vendor.lat, vendor.lng);
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerHTML = `<div><i class="fas fa-route"></i> <strong>${escapeHtml(vendor.name)}</strong><br><small>${distance < 1 ? Math.round(distance * 1000) + 'm' : distance.toFixed(1) + 'km'}</small></div><button onclick="this.remove()" style="background:white; border:none; padding:5px 12px; border-radius:30px;">OK</button>`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    };
+    
+    window.showVendorDetail = (id) => {
+        const v = vendors.find(v => v.id === id);
+        if (!v) return;
+        const isSaved = shortlist.some(s => s.id === id);
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.innerHTML = `<div class="modal-content">
-            <div class="modal-header"><h3>${escapeHtml(vendor.business_name)}</h3><button class="close-modal">✕</button></div>
-            <div class="modal-body">
-                <p><i class="fas fa-star"></i> Rating: ${vendor.rating || 0}/5 (${vendor.review_count || 0} reviews)</p>
-                <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(vendor.address || 'No address')}</p>
-                <p><i class="fas fa-tag"></i> ${vendor.category || 'Street Food'}</p>
-                ${vendor.hours ? `<p><i class="fas fa-clock"></i> Hours: ${escapeHtml(vendor.hours)}</p>` : ''}
-                ${vendor.price_range ? `<p><i class="fas fa-tag"></i> Price: ${escapeHtml(vendor.price_range)}</p>` : ''}
-                <p>${escapeHtml(vendor.description || 'No description available')}</p>
-                <div class="vendor-menu-row">
-                    <span class="menu-chip" onclick="navigateToVendor(${vendor.id})"><i class="fas fa-directions"></i> Navigate</span>
-                    <span class="menu-chip" onclick="messageVendor(${vendor.id})"><i class="fab fa-facebook-messenger"></i> Chat</span>
-                    <span class="menu-chip" id="saveVendorBtn"><i class="fas fa-${isSaved ? 'heart' : 'heart-o'}"></i> ${isSaved ? 'Saved' : 'Save'}</span>
+            <div class="modal-header"><h3>${escapeHtml(v.name)}</h3><button class="close-modal">✕</button></div>
+            <div style="padding: 20px;">
+                <p><i class="fas fa-star" style="color: #fbbf24;"></i> ${v.rating}/5 (${v.reviews} reviews)</p>
+                <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(v.address)}</p>
+                <p><i class="fas fa-tag"></i> ${v.category} | ${v.hours}</p>
+                <p><i class="fas fa-tag"></i> ${v.price}</p>
+                <p>${escapeHtml(v.desc)}</p>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="menu-chip" onclick="navigateToVendor(${v.id}); document.querySelector('.modal-overlay')?.remove();" style="flex:1"><i class="fas fa-route"></i> Navigate</button>
+                    <button class="menu-chip" id="saveBtn" style="flex:1"><i class="fas fa-${isSaved ? 'heart' : 'heart-o'}"></i> ${isSaved ? 'Saved' : 'Save'}</button>
                 </div>
-                <h4 style="margin-top: 16px;">📋 Menu Highlights</h4>
-                <div id="vendorMenuPreview" class="vendor-menu-row"></div>
-                <h4>🍽️ Recent Reviews</h4>
-                <div id="vendorReviewsPreview"></div>
             </div>
         </div>`;
         document.body.appendChild(modal);
         modal.querySelector('.close-modal').onclick = () => modal.remove();
-        document.getElementById('saveVendorBtn').onclick = async () => {
-            if (isSaved) await removeFromShortlist(vendorId);
-            else await addToShortlist(vendorId);
+        modal.querySelector('#saveBtn').onclick = async () => {
+            if (isSaved) await removeFromShortlist(id);
+            else await addToShortlist(id);
             modal.remove();
-            showVendorDetail(vendorId);
+            showVendorDetail(id);
         };
-        const menuDiv = document.getElementById('vendorMenuPreview');
-        menuDiv.innerHTML = `<span class="menu-chip"><i class="fas fa-utensils"></i> ${vendor.category || 'Street Food'}</span>
-            <span class="menu-chip"><i class="fas fa-clock"></i> ${vendor.hours || '4pm - 10pm'}</span>
-            <span class="menu-chip"><i class="fas fa-tag"></i> ${vendor.price_range || '₱20-₱150'}</span>`;
-        const reviewsDiv = document.getElementById('vendorReviewsPreview');
-        const vendorPosts = posts.filter(p => p.vendor_id === vendorId);
-        reviewsDiv.innerHTML = vendorPosts.length ? vendorPosts.slice(0, 3).map(p => `<div style="padding: 10px; margin: 10px 0; background: var(--primary-soft); border-radius: 16px;"><strong>${escapeHtml(p.title)}</strong><div>${truncate(escapeHtml(p.content), 80)}</div>${p.rating ? `<div><i class="fas fa-star" style="color: #ffc107;"></i> ${p.rating}/5</div>` : ''}<div class="post-meta">${formatDate(p.created_at)}</div></div>`).join('') : '<p class="text-muted">No reviews yet. Be the first to review!</p>';
     };
     
-    window.showPostDetail = async (postId) => {
-        try {
-            const post = await apiRequest(`/posts/${postId}`);
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `<div class="modal-content">
-                <div class="modal-header"><h3>${escapeHtml(post.title)}</h3><button class="close-modal">✕</button></div>
-                <div class="modal-body">
-                    <div class="post-meta"><i class="fas fa-user-circle"></i> ${escapeHtml(post.author_name || 'Foodie')}<span>${formatDate(post.created_at)}</span>${post.rating ? `<span class="post-badge"><i class="fas fa-star"></i> ${post.rating}/5</span>` : ''}</div>
-                    <p style="margin: 15px 0;">${escapeHtml(post.content)}</p>
-                    ${post.image_url ? `<img src="${post.image_url}" style="max-width: 100%; border-radius: 20px; margin: 12px 0;">` : ''}
-                    <div id="commentList"></div>
-                    <div class="input-group" style="margin-top: 15px;"><i class="fas fa-comment"></i><textarea id="newCommentText" rows="3" placeholder="Share your thoughts..."></textarea></div>
-                    <button id="submitCommentBtn" class="btn-primary" style="margin-top: 10px;">Post Comment</button>
-                </div>
-            </div>`;
-            document.body.appendChild(modal);
-            modal.querySelector('.close-modal').onclick = () => modal.remove();
-            const commentList = document.getElementById('commentList');
-            if (post.comments && post.comments.length) {
-                commentList.innerHTML = post.comments.map(c => `<div style="padding: 12px; margin: 10px 0; background: var(--primary-soft); border-radius: 20px;"><strong><i class="fas fa-user-circle"></i> ${escapeHtml(c.author_name || 'Foodie')}</strong><div style="margin-top: 5px;">${escapeHtml(c.content)}</div><div class="post-meta">${formatDate(c.created_at)}</div></div>`).join('');
-            } else { commentList.innerHTML = '<p class="text-muted" style="text-align: center;">No comments yet. Be the first!</p>'; }
-            document.getElementById('submitCommentBtn').onclick = async () => {
-                const content = document.getElementById('newCommentText').value;
-                if (!content.trim()) return;
-                await addComment(postId, content);
-                modal.remove();
-                showPostDetail(postId);
-            };
-        } catch (error) { alert('Error loading post'); }
+    window.showPostDetail = (id) => {
+        const post = posts.find(p => p.id === id);
+        if (!post) return;
+        alert(`📝 ${post.title}\n\n${post.content}\n\n⭐ ${post.rating}/5\n👤 ${post.author}`);
     };
     
-    window.handleVote = async (postId, voteType) => { await vote(postId, voteType); renderFeed(); };
-    window.navigateToVendor = (vendorId) => {
-        const vendor = vendors.find(v => v.id === vendorId);
-        if (!vendor || !vendor.latitude || !vendor.longitude) {
-            alert('Vendor location not available');
-            return;
-        }
-        
-        let url;
-        const mapsApp = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        
-        if (currentLocation) {
-            const origin = `${currentLocation.lat},${currentLocation.lng}`;
-            const destination = `${vendor.latitude},${vendor.longitude}`;
-            
-            if (mapsApp) {
-                // Try native maps on mobile
-                if (/Android/i.test(navigator.userAgent)) {
-                    url = `google.navigation:q=${destination}`;
-                } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                    url = `maps://maps.apple.com/?daddr=${destination}&dirflg=d`;
-                }
-                window.location.href = url;
-            } else {
-                // Web-based Google Maps
-                url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=walking`;
-                window.open(url, '_blank');
-            }
-        } else {
-            // Just show the location
-            url = `https://www.google.com/maps/search/?api=1&query=${vendor.latitude},${vendor.longitude}`;
-            window.open(url, '_blank');
-        }
-        
-        logActivity('navigate', vendorId);
-    };
-    window.messageVendor = async (vendorId) => {
-        const vendor = vendors.find(v => v.id === vendorId);
-        if (vendor) { const messenger = await getMessengerLink(vendorId); window.open(messenger.messenger_url, '_blank'); logActivity('chat', vendorId); }
-    };
-    window.removeFromShortlistUI = async (vendorId) => { await removeFromShortlist(vendorId); renderShortlist(); };
-    window.toggleShortlistQuick = async (vendorId) => { await addToShortlist(vendorId); renderNearbyList(); renderShortlist(); };
-    window.sharePost = (postId) => { if (navigator.share) navigator.share({ title: 'Lako Food Discovery', text: 'Check out this food review on Lako!' }); else { prompt('Share this post:', window.location.href); } };
+    window.handleVote = async (id, type) => { await vote(id, type); renderFeed(); };
+    window.messageVendor = () => { window.open('https://m.me/lakoapp', '_blank'); };
+    window.removeFromShortlistUI = async (id) => { await removeFromShortlist(id); renderShortlist(); };
     
     function showCreatePostModal() {
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.innerHTML = `<div class="modal-content">
-            <div class="modal-header"><h3>Share Your Food Experience</h3><button class="close-modal">✕</button></div>
-            <div class="modal-body">
-                <div class="input-group"><i class="fas fa-store"></i><select id="postVendor"><option value="">Select Vendor (Optional)</option>${vendors.map(v => `<option value="${v.id}">${escapeHtml(v.business_name)}</option>`).join('')}</select></div>
-                <div class="input-group"><i class="fas fa-heading"></i><input type="text" id="postTitle" placeholder="Title"></div>
-                <div class="input-group"><i class="fas fa-star"></i><select id="postRating"><option value="">No Rating</option><option value="5">★★★★★ (5)</option><option value="4">★★★★☆ (4)</option><option value="3">★★★☆☆ (3)</option><option value="2">★★☆☆☆ (2)</option><option value="1">★☆☆☆☆ (1)</option></select></div>
-                <div class="input-group"><i class="fas fa-image"></i><input type="text" id="postImage" placeholder="Image URL (optional)"></div>
-                <div class="input-group"><i class="fas fa-comment"></i><textarea id="postContent" rows="5" placeholder="Share your review or question..."></textarea></div>
+            <div class="modal-header"><h3>Share Your Experience</h3><button class="close-modal">✕</button></div>
+            <div style="padding: 20px;">
+                <div class="input-group"><i class="fas fa-store"></i><select id="postVendor"><option value="">Select Vendor</option>${vendors.map(v => `<option value="${v.id}">${escapeHtml(v.name)}</option>`).join('')}</select></div>
+                <div class="input-group"><i class="fas fa-heading"></i><input id="postTitle" placeholder="Title *"></div>
+                <div class="input-group"><i class="fas fa-star"></i><select id="postRating"><option value="">Rating</option><option value="5">★★★★★</option><option value="4">★★★★☆</option><option value="3">★★★☆☆</option><option value="2">★★☆☆☆</option><option value="1">★☆☆☆☆</option></select></div>
+                <div class="input-group"><i class="fas fa-comment"></i><textarea id="postContent" rows="3" placeholder="Your review *"></textarea></div>
+                <button id="submitPost" class="btn-primary">Post Review</button>
             </div>
-            <div class="modal-footer" style="padding: 15px;"><button id="submitPostBtn" class="btn-primary">Post</button></div>
         </div>`;
         document.body.appendChild(modal);
         modal.querySelector('.close-modal').onclick = () => modal.remove();
-        document.getElementById('submitPostBtn').onclick = async () => {
+        modal.querySelector('#submitPost').onclick = async () => {
             const vendorId = document.getElementById('postVendor').value;
             const title = document.getElementById('postTitle').value;
             const rating = document.getElementById('postRating').value;
-            const image = document.getElementById('postImage').value;
             const content = document.getElementById('postContent').value;
-            if (!title || !content) { alert('Please enter a title and content'); return; }
-            await createPost({ vendor_id: vendorId ? parseInt(vendorId) : null, title, content, rating: rating ? parseInt(rating) : null, image_url: image || null, post_type: 'review' });
+            if (!title || !content) { alert('Please fill title and content'); return; }
+            await createPost({ title, content, rating: rating ? parseInt(rating) : null, vendor: vendors.find(v => v.id == vendorId)?.name });
             modal.remove();
-            await fetchPosts();
             renderFeed();
+            alert('Post created!');
         };
     }
     
-    function performSearch() {
-        const query = document.getElementById('searchInput')?.value.trim();
-        if (!query) return;
-        const searchType = document.querySelector('.search-tab-btn.active')?.dataset.type || 'vendors';
-        const resultsContainer = document.getElementById('searchResults');
-        if (searchType === 'vendors') {
-            const results = vendors.filter(v => v.business_name.toLowerCase().includes(query.toLowerCase()) || (v.category && v.category.toLowerCase().includes(query.toLowerCase())));
-            resultsContainer.innerHTML = results.map(v => `<div class="vendor-card" onclick="showVendorDetail(${v.id})"><div class="vendor-icon"><i class="fas fa-store"></i></div><div class="vendor-info"><h4>${escapeHtml(v.business_name)}</h4><p>${escapeHtml(v.address || '')} ⭐ ${v.rating || 0}</p><div class="vendor-menu-row"><span class="menu-chip" onclick="event.stopPropagation(); navigateToVendor(${v.id})"><i class="fas fa-directions"></i> Navigate</span><span class="menu-chip" onclick="event.stopPropagation(); messageVendor(${v.id})"><i class="fab fa-facebook-messenger"></i> Chat</span></div></div></div>`).join('');
-            if (!results.length) resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>No vendors found</p></div>';
-        } else {
-            const results = posts.filter(p => p.title.toLowerCase().includes(query.toLowerCase()) || p.content.toLowerCase().includes(query.toLowerCase()));
-            resultsContainer.innerHTML = results.map(p => `<div class="feed-card" onclick="showPostDetail(${p.id})"><h3>${escapeHtml(p.title)}</h3><div>${truncate(escapeHtml(p.content), 100)}</div><div class="post-meta">${formatDate(p.created_at)}</div></div>`).join('');
-            if (!results.length) resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>No posts found</p></div>';
-        }
-    }
-    
     function setupSearch() {
-        document.getElementById('searchExec')?.addEventListener('click', performSearch);
-        document.getElementById('searchInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') performSearch(); });
-        document.querySelectorAll('.search-tab-btn').forEach(btn => { btn.onclick = () => { document.querySelectorAll('.search-tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); performSearch(); }; });
+        document.getElementById('searchExec')?.addEventListener('click', () => {
+            const q = document.getElementById('searchInput')?.value.toLowerCase();
+            if (!q) return;
+            const type = document.querySelector('.search-tab-btn.active')?.dataset.type || 'vendors';
+            const results = document.getElementById('searchResults');
+            if (type === 'vendors') {
+                const res = vendors.filter(v => v.name.toLowerCase().includes(q) || v.category.toLowerCase().includes(q));
+                results.innerHTML = res.map(v => `<div class="vendor-card" onclick="showVendorDetail(${v.id})"><div class="vendor-icon"><i class="fas fa-store"></i></div><div><h4>${escapeHtml(v.name)}</h4><p style="font-size:0.75rem;">${escapeHtml(v.address)}</p></div></div>`).join('');
+                if (!res.length) results.innerHTML = '<div class="empty-state">No vendors found</div>';
+            } else {
+                const res = posts.filter(p => p.title.toLowerCase().includes(q) || p.content.toLowerCase().includes(q));
+                results.innerHTML = res.map(p => `<div class="feed-card" onclick="showPostDetail(${p.id})"><h3>${escapeHtml(p.title)}</h3><p>${p.content.substring(0, 80)}...</p></div>`).join('');
+                if (!res.length) results.innerHTML = '<div class="empty-state">No posts found</div>';
+            }
+        });
     }
     
     function setupTheme() {
         document.querySelectorAll('.theme-btn').forEach(btn => {
-            btn.onclick = () => { const t = btn.dataset.theme; document.body.setAttribute('data-theme', t); userPreferences.theme = t; localStorage.setItem('theme', t); document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); };
+            btn.onclick = () => {
+                const t = btn.dataset.theme;
+                document.body.setAttribute('data-theme', t);
+                localStorage.setItem('theme', t);
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (map) initMap();
+            };
             if (btn.dataset.theme === userPreferences.theme) btn.classList.add('active');
         });
     }
     
-    // ======================== APP NAVIGATION ========================
+    // Navigation
     async function showSplash() {
-        document.getElementById('app').innerHTML = `<div id="splash" class="screen"><div class="splash-content"><i class="fas fa-utensils"></i><h1>LAKO</h1><p>street food · nearby · local</p><div class="loader"></div></div></div>`;
+        document.getElementById('app').innerHTML = `<div class="main-screen" id="splashScreen"><div style="display: flex; align-items: center; justify-content: center; height: 100%; background: var(--primary-gradient);"><div style="text-align: center;"><i class="fas fa-utensils" style="font-size: 4rem; margin-bottom: 16px; animation: bounce 0.9s ease infinite;"></i><h1 style="font-size: 2.5rem;">LAKO</h1><p style="opacity: 0.9; margin-top: 8px;">street food · nearby · local</p><div class="loader"></div></div></div></div>`;
         const userId = localStorage.getItem('userId');
-        if (userId && await loadUser(userId)) { await Promise.all([fetchVendors(), fetchPosts(), fetchShortlist(), fetchUserVotes()]); setTimeout(() => showMainApp(), 500); } else { setTimeout(() => showLanding(), 1800); }
+        if (userId && await loadUser(userId)) { setTimeout(() => showMainApp(), 1000); }
+        else { setTimeout(() => showLanding(), 1500); }
     }
     
     function showLanding() {
-        document.getElementById('app').innerHTML = `<div class="screen"><div class="container" style="padding-top: 20%;"><div class="card" style="text-align: center;"><i class="fas fa-utensils" style="font-size: 4rem; color: var(--primary); margin-bottom: 15px;"></i><h1 style="color: var(--primary); margin-bottom: 10px;">LAKO</h1><p style="color: var(--text-muted); margin-bottom: 30px;">Discover street food vendors near you</p><button id="loginBtn" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login with Gmail</button><button id="registerBtn" class="btn-secondary" style="margin-top: 12px;"><i class="fas fa-user-plus"></i> Create Account</button></div></div></div>`;
+        document.getElementById('app').innerHTML = `<div class="main-screen"><div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 20px; background: linear-gradient(135deg, #0f172a, #1e293b);"><div class="glass-card" style="max-width: 380px; width: 100%; text-align: center;"><i class="fas fa-utensils" style="font-size: 4rem; color: var(--primary); margin-bottom: 16px;"></i><h1 style="font-size: 2.2rem;">LAKO</h1><p style="color: var(--text-secondary); margin: 16px 0;">Discover street food vendors near you</p><button id="loginBtn" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button><button id="registerBtn" class="btn-secondary" style="margin-top: 12px;"><i class="fas fa-user-plus"></i> Sign Up</button></div></div></div>`;
         document.getElementById('loginBtn').onclick = showLogin;
         document.getElementById('registerBtn').onclick = showRegister;
     }
     
     function showLogin() {
-        document.getElementById('app').innerHTML = `<div class="screen"><div class="container" style="padding-top: 15%;"><div class="card"><h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Welcome Back</h2><div class="input-group"><i class="fas fa-envelope"></i><input type="email" id="loginEmail" placeholder="your@gmail.com"></div><div class="input-group"><i class="fas fa-lock"></i><input type="password" id="loginPassword" placeholder="Password"></div><div id="loginMsg" style="color: #dc3545; font-size: 0.85rem; margin-bottom: 10px;"></div><button id="doLoginBtn" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button><button id="backLanding" class="btn-secondary" style="margin-top: 12px;"><i class="fas fa-arrow-left"></i> Back</button></div></div></div>`;
+        document.getElementById('app').innerHTML = `<div class="main-screen"><div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 20px; background: linear-gradient(135deg, #0f172a, #1e293b);"><div class="glass-card" style="max-width: 380px; width: 100%;"><h2 style="text-align:center; margin-bottom: 20px;">Welcome Back</h2><div class="input-group"><i class="fas fa-envelope"></i><input id="loginEmail" placeholder="your@gmail.com"></div><div class="input-group"><i class="fas fa-lock"></i><input id="loginPassword" type="password" placeholder="Password"></div><button id="doLoginBtn" class="btn-primary">Login</button><button id="backLanding" class="btn-secondary" style="margin-top: 12px;">Back</button></div></div></div>`;
         document.getElementById('doLoginBtn').onclick = async () => {
             const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            if (!email.endsWith('@gmail.com')) { document.getElementById('loginMsg').innerHTML = 'Only Gmail addresses are allowed'; return; }
-            const success = await login(email, password);
-            if (success) { await Promise.all([fetchVendors(), fetchPosts(), fetchShortlist(), fetchUserVotes()]); showMainApp(); } 
-            else { document.getElementById('loginMsg').innerHTML = 'Invalid credentials'; }
+            const pass = document.getElementById('loginPassword').value;
+            if (email && pass && await login(email, pass)) { showMainApp(); }
+            else alert('Try: demo@gmail.com');
         };
         document.getElementById('backLanding').onclick = showLanding;
     }
     
     function showRegister() {
-        document.getElementById('app').innerHTML = `<div class="screen"><div class="container" style="padding-top: 10%;"><div class="card"><h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Create Account</h2><div class="input-group"><i class="fas fa-user"></i><input type="text" id="regName" placeholder="Full Name"></div><div class="input-group"><i class="fas fa-envelope"></i><input type="email" id="regEmail" placeholder="your@gmail.com"></div><div class="input-group"><i class="fas fa-phone"></i><input type="tel" id="regPhone" placeholder="Phone Number"></div><div class="input-group"><i class="fas fa-lock"></i><input type="password" id="regPass" placeholder="Password"></div><div id="regMsg" style="color: #dc3545; font-size: 0.85rem; margin-bottom: 10px;"></div><button id="doRegisterBtn" class="btn-primary"><i class="fas fa-check-circle"></i> Sign Up</button><button id="backLoginReg" class="btn-secondary" style="margin-top: 12px;"><i class="fas fa-arrow-left"></i> Back to Login</button></div></div></div>`;
+        document.getElementById('app').innerHTML = `<div class="main-screen"><div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 20px; background: linear-gradient(135deg, #0f172a, #1e293b);"><div class="glass-card" style="max-width: 380px; width: 100%;"><h2 style="text-align:center; margin-bottom: 20px;">Create Account</h2><div class="input-group"><i class="fas fa-user"></i><input id="regName" placeholder="Full Name"></div><div class="input-group"><i class="fas fa-envelope"></i><input id="regEmail" placeholder="your@gmail.com"></div><div class="input-group"><i class="fas fa-phone"></i><input id="regPhone" placeholder="Phone"></div><div class="input-group"><i class="fas fa-lock"></i><input id="regPass" type="password" placeholder="Password"></div><button id="doRegisterBtn" class="btn-primary">Sign Up</button><button id="backLoginReg" class="btn-secondary" style="margin-top: 12px;">Back</button></div></div></div>`;
         document.getElementById('doRegisterBtn').onclick = async () => {
-            const fullName = document.getElementById('regName').value;
+            const name = document.getElementById('regName').value;
             const email = document.getElementById('regEmail').value;
             const phone = document.getElementById('regPhone').value;
-            const password = document.getElementById('regPass').value;
-            if (!fullName || !email || !password) { document.getElementById('regMsg').innerHTML = 'Please fill all required fields'; return; }
-            if (!email.endsWith('@gmail.com')) { document.getElementById('regMsg').innerHTML = 'Only Gmail addresses are allowed'; return; }
-            const success = await register(fullName, email, phone, password);
-            if (success) { alert('Registration successful! Please login.'); showLogin(); } 
-            else { document.getElementById('regMsg').innerHTML = 'Registration failed'; }
+            const pass = document.getElementById('regPass').value;
+            if (name && email && pass && await register(name, email, phone, pass)) { showMainApp(); }
+            else alert('Please fill all fields');
         };
         document.getElementById('backLoginReg').onclick = showLogin;
     }
@@ -681,92 +838,174 @@
     async function showMainApp() {
         if (!currentUser) return;
         
-        // Request notification permission
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                    console.log('Notifications enabled');
-                }
-            });
-        }
+        const html = `
+            <div class="main-screen">
+                <!-- Tab Content Area -->
+                <div id="feedTab" class="tab-content-area">
+                    <div class="container" style="max-width: 560px; margin: 0 auto;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                            <h3 style="font-size: 1.3rem;"><i class="fas fa-fire"></i> Foodie Feed</h3>
+                            <button id="createPostBtn" style="background: var(--primary-gradient); border: none; padding: 8px 18px; border-radius: 40px; color: white; font-weight: 600; cursor: pointer;"><i class="fas fa-plus"></i> Share</button>
+                        </div>
+                        <div id="feedList"></div>
+                    </div>
+                </div>
+                
+                <div id="mapTab" class="tab-content-area hidden">
+                    <div class="map-container">
+                        <div class="location-badge" id="mapLocationStatus"><i class="fas fa-spinner fa-pulse"></i> Getting location...</div>
+                        <div id="map"></div>
+                        <div class="map-controls">
+                            <button id="centerLocationBtn" class="control-btn"><i class="fas fa-location-dot"></i></button>
+                            <button id="refreshMapBtn" class="control-btn"><i class="fas fa-sync-alt"></i></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="nearbyTab" class="tab-content-area hidden">
+                    <div class="container" style="max-width: 560px; margin: 0 auto;">
+                        <h3><i class="fas fa-map-pin"></i> Vendors Within ${userPreferences.radius}km</h3>
+                        <div id="nearbyVendorsList" class="vendor-menu-row" style="margin:12px 0"></div>
+                        <div id="nearbyFullList"></div>
+                    </div>
+                </div>
+                
+                <div id="shortlistTab" class="tab-content-area hidden">
+                    <div class="container" style="max-width: 560px; margin: 0 auto;">
+                        <h3><i class="fas fa-heart"></i> Saved Vendors</h3>
+                        <div id="shortlistContainer"></div>
+                    </div>
+                </div>
+                
+                <div id="searchTab" class="tab-content-area hidden">
+                    <div class="container" style="max-width: 560px; margin: 0 auto;">
+                        <div class="search-bar">
+                            <i class="fas fa-search"></i>
+                            <input id="searchInput" placeholder="Search vendors or posts...">
+                            <button id="searchExec" style="background: none; border: none; color: var(--primary); cursor: pointer;"><i class="fas fa-arrow-right"></i></button>
+                        </div>
+                        <div class="search-tabs">
+                            <button class="search-tab-btn active" data-type="vendors"><i class="fas fa-store"></i> Vendors</button>
+                            <button class="search-tab-btn" data-type="posts"><i class="fas fa-newspaper"></i> Posts</button>
+                        </div>
+                        <div id="searchResults"></div>
+                    </div>
+                </div>
+                
+                <div id="profileTab" class="tab-content-area hidden">
+                    <div class="container" style="max-width: 560px; margin: 0 auto;">
+                        <div class="glass-card" style="text-align:center">
+                            <i class="fas fa-user-circle" style="font-size: 4rem; color: var(--primary);"></i>
+                            <h3 style="margin-top: 8px;">${escapeHtml(currentUser.name)}</h3>
+                            <p style="font-size: 0.85rem;">${escapeHtml(currentUser.email)}</p>
+                        </div>
+                        <div class="glass-card">
+                            <h4>🎨 Theme</h4>
+                            <div class="theme-colors" style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button class="theme-btn" data-theme="green" style="background:#10b981"></button>
+                                <button class="theme-btn" data-theme="blue" style="background:#3b82f6"></button>
+                                <button class="theme-btn" data-theme="purple" style="background:#8b5cf6"></button>
+                                <button class="theme-btn" data-theme="orange" style="background:#f97316"></button>
+                                <button class="theme-btn" data-theme="pink" style="background:#ec489a"></button>
+                            </div>
+                        </div>
+                        <div class="glass-card">
+                            <h4><i class="fas fa-sliders-h"></i> Discovery Radius</h4>
+                            <input type="range" id="radiusSlider" min="0.5" max="5" step="0.1" value="${userPreferences.radius}" style="width:100%; margin: 10px 0;">
+                            <span id="radiusValue" style="color: var(--primary);">${userPreferences.radius} km</span>
+                        </div>
+                        <div class="glass-card">
+                            <h4><i class="fas fa-utensils"></i> Categories</h4>
+                            <div id="categoriesFilter" class="vendor-menu-row"></div>
+                        </div>
+                        <div class="glass-card">
+                            <h4><i class="fas fa-info-circle"></i> About</h4>
+                            <p style="font-size: 0.8rem;">Version 2.1 · Tiaong, Quezon</p>
+                            <p style="font-size: 0.8rem;">Kyle Morillo & Alexander Millicamp</p>
+                        </div>
+                        <button id="logoutBtn" style="background: #dc2626; border: none; padding: 12px; border-radius: 60px; color: white; font-weight: 600; width: 100%; cursor: pointer;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </div>
+                </div>
+                
+                <!-- Bottom Navigation -->
+                <div class="bottom-nav">
+                    <button data-tab="feed" class="nav-btn active"><i class="fas fa-newspaper"></i><span>Feed</span></button>
+                    <button data-tab="map" class="nav-btn"><i class="fas fa-map-marked-alt"></i><span>Map</span></button>
+                    <button data-tab="nearby" class="nav-btn"><i class="fas fa-location-dot"></i><span>Nearby</span></button>
+                    <button data-tab="shortlist" class="nav-btn"><i class="fas fa-heart"></i><span>Saved</span></button>
+                    <button data-tab="search" class="nav-btn"><i class="fas fa-search"></i><span>Search</span></button>
+                    <button data-tab="profile" class="nav-btn"><i class="fas fa-user"></i><span>Profile</span></button>
+                </div>
+            </div>
+        `;
         
-        // Request geolocation permission
-        if (navigator.geolocation && userPreferences.notifications.nearbyVendors) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => console.log('Location access granted'),
-                (err) => console.log('Location permission: Please enable for geofence alerts'),
-                { enableHighAccuracy: true, timeout: 5000 }
-            );
-        }
+        document.getElementById('app').innerHTML = html;
         
         startLocationTracking();
-        const mainHtml = `<div class="screen">
-            <div class="bottom-nav">
-                <button data-tab="feed" class="nav-btn active"><i class="fas fa-newspaper"></i><span>Feed</span></button>
-                <button data-tab="map" class="nav-btn"><i class="fas fa-map-marked-alt"></i><span>Map</span></button>
-                <button data-tab="nearby" class="nav-btn"><i class="fas fa-location-dot"></i><span>Nearby</span></button>
-                <button data-tab="search" class="nav-btn"><i class="fas fa-search"></i><span>Search</span></button>
-                <button data-tab="profile" class="nav-btn"><i class="fas fa-user"></i><span>Profile</span></button>
-            </div>
-            <div id="feedTab" class="tab active"><div class="container"><div style="display:flex; justify-content:space-between; margin-bottom:16px"><h3><i class="fas fa-fire"></i> Foodie Feed</h3><button id="createPostBtn" style="background:var(--primary);color:white;border:none;padding:8px 16px;border-radius:40px;font-weight:600;cursor:pointer"><i class="fas fa-plus"></i> Share</button></div><div id="feedList"></div></div></div>
-            <div id="mapTab" class="tab hidden"><div id="map" class="map-container"></div><div class="map-controls"><button id="centerLocationBtn" class="control-btn"><i class="fas fa-location-dot"></i></button><button id="refreshMapBtn" class="control-btn"><i class="fas fa-sync-alt"></i></button></div></div>
-            <div id="nearbyTab" class="tab hidden"><div class="container"><h3><i class="fas fa-map-pin"></i> Vendors Within ${userPreferences.radius}km</h3><div id="nearbyVendorsList" class="vendor-menu-row" style="margin:12px 0; flex-wrap:wrap"></div><div id="nearbyFullList"></div></div></div>
-            <div id="searchTab" class="tab hidden"><div class="container"><div class="search-bar"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search vendors or posts..."><button id="searchExec" class="icon-btn"><i class="fas fa-arrow-right"></i></button></div><div class="search-tabs"><button class="search-tab-btn active" data-type="vendors"><i class="fas fa-store"></i> Vendors</button><button class="search-tab-btn" data-type="posts"><i class="fas fa-newspaper"></i> Posts</button></div><div id="searchResults"></div></div></div>
-            <div id="profileTab" class="tab hidden"><div class="container"><div class="card" style="text-align:center"><i class="fas fa-user-circle" style="font-size:4rem;color:var(--primary)"></i><h3>${escapeHtml(currentUser.full_name)}</h3><p>${escapeHtml(currentUser.email)}</p></div>
-            <div class="card"><h4>🎨 Theme</h4><div class="theme-colors"><button class="theme-btn" data-theme="green" style="background:#28a745"></button><button class="theme-btn" data-theme="blue" style="background:#0d6efd"></button><button class="theme-btn" data-theme="purple" style="background:#6f42c1"></button><button class="theme-btn" data-theme="orange" style="background:#fd7e14"></button><button class="theme-btn" data-theme="teal" style="background:#20c997"></button></div></div>
-            <div class="card"><h4><i class="fas fa-sliders-h"></i> Discovery Radius (km)</h4><input type="range" id="radiusSlider" min="0.5" max="2" step="0.1" value="${userPreferences.radius}" style="width:100%"><span id="radiusValue">${userPreferences.radius} km</span><p class="text-muted" style="font-size:0.7rem; margin-top:4px">Vendors within this radius appear in Nearby tab</p></div>
-            <div class="card"><h4><i class="fas fa-utensils"></i> Food Categories</h4><div id="categoriesFilter" class="vendor-menu-row"></div></div>
-            <div class="card"><h4><i class="fas fa-bell"></i> Notifications</h4><div class="setting-item"><span><i class="fas fa-location-dot"></i> Nearby vendor alerts (100m)</span><label class="toggle-switch"><input type="checkbox" id="nearbyNotif" ${userPreferences.notifications.nearbyVendors ? 'checked' : ''}><span class="toggle-slider"></span></label></div></div>
-            <div class="card"><h4><i class="fas fa-map-o"></i> Location Services</h4><div class="setting-item"><span><i class="fas fa-crosshairs"></i> Real-time Location Tracking</span><label class="toggle-switch"><input type="checkbox" id="locationTrackingToggle" checked><span class="toggle-slider"></span></label></div><p class="text-muted" style="font-size:0.75rem; margin-top:8px"><i class="fas fa-info-circle"></i> Keep enabled for geofence alerts and nearby vendor discovery</p></div>
-            <div class="card"><h4><i class="fas fa-info-circle"></i> About Lako</h4><p>Version 2.1 · Capstone Project · AITE · Tiaong, Quezon</p><p>Geofencing: Alerts when within 100m of a vendor</p><p>Real-time Navigation: Google Maps Integration</p><p>Developers: Kyle Morillo & Alexander Millicamp</p></div>
-            <button id="logoutBtn" class="btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></div></div></div>`;
-        document.getElementById('app').innerHTML = mainHtml;
-        renderFeed(); renderShortlist(); initMap(); renderNearbyList();
-        document.querySelectorAll('.nav-btn').forEach(btn => { 
-            btn.onclick = () => { 
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); 
-                btn.classList.add('active'); 
-                document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden')); 
-                document.getElementById(`${btn.dataset.tab}Tab`).classList.remove('hidden'); 
+        
+        setTimeout(() => {
+            initMap();
+            renderFeed();
+            renderShortlist();
+            updateNearbyVendors();
+            renderNearbyList();
+        }, 200);
+        
+        // Tab switching
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.tab-content-area').forEach(t => t.classList.add('hidden'));
+                document.getElementById(`${btn.dataset.tab}Tab`).classList.remove('hidden');
+                
                 if (btn.dataset.tab === 'map') {
-                    setTimeout(() => map?.invalidateSize(), 100);
+                    setTimeout(() => {
+                        if (map) map.invalidateSize();
+                        else initMap();
+                    }, 100);
                 }
-                if (btn.dataset.tab === 'profile') {
-                    renderShortlist(); 
-                }
-                if (btn.dataset.tab === 'nearby') {
-                    renderNearbyList();
-                }
-                if (btn.dataset.tab === 'search') {
-                    document.getElementById('searchInput')?.focus();
-                }
-            }; 
+                if (btn.dataset.tab === 'nearby') renderNearbyList();
+                if (btn.dataset.tab === 'shortlist') renderShortlist();
+            };
         });
+        
         document.getElementById('createPostBtn').onclick = showCreatePostModal;
         document.getElementById('logoutBtn').onclick = async () => { await logout(); showLanding(); };
-        document.getElementById('centerLocationBtn')?.addEventListener('click', () => { if (currentLocation && map) map.setView([currentLocation.lat, currentLocation.lng], 15); });
-        document.getElementById('radiusSlider')?.addEventListener('input', (e) => { userPreferences.radius = parseFloat(e.target.value); document.getElementById('radiusValue').innerText = userPreferences.radius + ' km'; renderNearbyList(); });
-        document.getElementById('nearbyNotif')?.addEventListener('change', (e) => { userPreferences.notifications.nearbyVendors = e.target.checked; if (e.target.checked && Notification.permission !== 'granted') Notification.requestPermission(); });
-        document.getElementById('locationTrackingToggle')?.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                startLocationTracking();
-            } else {
-                if (watchId) navigator.geolocation.clearWatch(watchId);
-                console.log('Location tracking disabled');
-            }
-        });
-        const categoriesDiv = document.getElementById('categoriesFilter');
-        if (categoriesDiv) {
-            categoriesDiv.innerHTML = userPreferences.categories.map(cat => `<span class="menu-chip" data-cat="${cat}" style="${userPreferences.selectedCategories.includes(cat) ? 'background:var(--primary); color:white' : ''}" onclick="toggleCategory('${cat}')">${cat}</span>`).join('');
+        document.getElementById('centerLocationBtn').onclick = () => {
+            if (currentLocation && map) map.setView([currentLocation.lat, currentLocation.lng], 16);
+        };
+        document.getElementById('refreshMapBtn').onclick = () => initMap();
+        document.getElementById('radiusSlider').oninput = (e) => {
+            userPreferences.radius = parseFloat(e.target.value);
+            document.getElementById('radiusValue').innerText = userPreferences.radius + ' km';
+            renderNearbyList();
+            updateNearbyVendors();
+        };
+        
+        const catDiv = document.getElementById('categoriesFilter');
+        if (catDiv) {
+            catDiv.innerHTML = userPreferences.categories.map(c => 
+                `<span class="menu-chip" onclick="toggleCategory('${c}')" style="${userPreferences.selectedCategories.includes(c) ? 'background:var(--primary); color:white' : ''}">${c}</span>`
+            ).join('');
         }
-        setupSearch(); setupTheme();
+        
+        setupSearch();
+        setupTheme();
     }
     
     window.toggleCategory = (cat) => {
-        if (userPreferences.selectedCategories.includes(cat)) userPreferences.selectedCategories = userPreferences.selectedCategories.filter(c => c !== cat);
-        else userPreferences.selectedCategories.push(cat);
-        const categoriesDiv = document.getElementById('categoriesFilter');
-        if (categoriesDiv) categoriesDiv.innerHTML = userPreferences.categories.map(c => `<span class="menu-chip" data-cat="${c}" style="${userPreferences.selectedCategories.includes(c) ? 'background:var(--primary); color:white' : ''}" onclick="toggleCategory('${c}')">${c}</span>`).join('');
+        if (userPreferences.selectedCategories.includes(cat)) {
+            userPreferences.selectedCategories = userPreferences.selectedCategories.filter(c => c !== cat);
+        } else {
+            userPreferences.selectedCategories.push(cat);
+        }
+        const catDiv = document.getElementById('categoriesFilter');
+        if (catDiv) {
+            catDiv.innerHTML = userPreferences.categories.map(c => 
+                `<span class="menu-chip" onclick="toggleCategory('${c}')" style="${userPreferences.selectedCategories.includes(c) ? 'background:var(--primary); color:white' : ''}">${c}</span>`
+            ).join('');
+        }
         renderNearbyList();
     };
     

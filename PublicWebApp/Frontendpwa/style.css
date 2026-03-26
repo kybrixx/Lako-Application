@@ -1444,10 +1444,121 @@ textarea:focus {
     margin: 5px 0;
 }
 
-/* ==================== RESPONSIVE ==================== */
-@media (max-width: 480px) {
+/* ==================== RESPONSIVE DESIGN - MOBILE FIRST ==================== */
+
+/* ===== EXTRA SMALL DEVICES (280px - 359px) ===== */
+@media (max-width: 359px) {
+    * {
+        font-size: 13px;
+    }
+    
     .container {
-        padding: 30px 20px;
+        padding: 15px 12px;
+    }
+    
+    body {
+        font-size: 13px;
+    }
+    
+    .tab {
+        padding: 12px 12px 80px 12px;
+    }
+    
+    .bottom-nav {
+        padding: 6px 0 10px;
+    }
+    
+    .nav-btn {
+        padding: 4px 6px;
+        gap: 2px;
+    }
+    
+    .nav-btn i {
+        font-size: 1rem;
+    }
+    
+    .nav-btn span {
+        font-size: 0.5rem;
+    }
+    
+    .btn-primary, .btn-secondary {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    .card, .vendor-card, .feed-card {
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+    
+    .input-group input, .input-group textarea {
+        padding: 10px 10px 10px 38px;
+        font-size: 13px;
+    }
+    
+    .modal-content {
+        max-width: 100%;
+        margin: 10px;
+        border-radius: 20px;
+    }
+    
+    .modal-header {
+        padding: 14px;
+    }
+    
+    .modal-body {
+        padding: 14px;
+    }
+    
+    .feed-card h3 {
+        font-size: 0.9rem;
+    }
+    
+    .vendor-info h4 {
+        font-size: 0.85rem;
+    }
+    
+    .theme-btn {
+        width: 34px;
+        height: 34px;
+    }
+    
+    .control-btn {
+        width: 42px;
+        height: 42px;
+        font-size: 1rem;
+    }
+    
+    .map-container {
+        height: calc(100vh - 120px);
+    }
+}
+
+/* ===== SMALL DEVICES (360px - 479px) ===== */
+@media (max-width: 479px) {
+    .container {
+        padding: 20px 16px;
+    }
+    
+    .tab {
+        padding: 15px 15px 80px 15px;
+    }
+    
+    .bottom-nav {
+        padding: 8px 0 12px;
+    }
+    
+    .nav-btn {
+        padding: 6px 8px;
+        font-size: 0.63rem;
+    }
+    
+    .nav-btn i {
+        font-size: 1.1rem;
+    }
+    
+    .nav-btn span {
+        font-size: 0.55rem;
     }
     
     .theme-btn {
@@ -1455,44 +1566,246 @@ textarea:focus {
         height: 38px;
     }
     
-    .nav-btn span {
-        font-size: 0.55rem;
+    .btn-primary, .btn-secondary, .btn-danger {
+        padding: 11px 18px;
+        font-size: 14px;
+        border-radius: 36px;
     }
     
-    .nav-btn i {
-        font-size: 1.1rem;
+    .card, .vendor-card, .feed-card, .suggestion-card, .search-result {
+        padding: 12px;
+        border-radius: 18px;
+        margin-bottom: 10px;
+    }
+    
+    .input-group input, .input-group textarea {
+        padding: 12px 12px 12px 40px;
+        font-size: 14px;
+        border-radius: 36px;
+    }
+    
+    .input-group i {
+        left: 14px;
+    }
+    
+    h1 { font-size: 1.8rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.1rem; }
+    h4 { font-size: 0.95rem; }
+    
+    .feed-card h3 {
+        font-size: 0.95rem;
+    }
+    
+    .post-meta {
+        font-size: 0.65rem;
+    }
+    
+    .post-content-text {
+        font-size: 0.8rem;
+    }
+    
+    .vendor-info h4 {
+        font-size: 0.9rem;
+    }
+    
+    .vendor-info p {
+        font-size: 0.75rem;
     }
     
     .preferences-grid {
         grid-template-columns: 1fr;
     }
     
-    .modal-large {
+    .modal-overlay {
+        padding: 12px;
+    }
+    
+    .modal-large, .modal-content {
         width: 100%;
+        max-width: 100%;
         margin: 0;
-        border-radius: 0;
-        max-height: 100vh;
+        border-radius: 24px;
+        max-height: 95vh;
+    }
+    
+    .modal-header {
+        padding: 16px;
+    }
+    
+    .modal-body {
+        padding: 16px;
     }
     
     .feed-sort {
         flex-wrap: wrap;
         justify-content: center;
+        gap: 6px;
     }
     
     .sort-btn {
         padding: 6px 12px;
         font-size: 0.7rem;
     }
+    
+    .theme-colors {
+        gap: 10px;
+    }
+    
+    .profile-stats {
+        flex-direction: row;
+        gap: 8px;
+        padding: 12px;
+    }
+    
+    .stat {
+        flex: 1;
+    }
+    
+    .stat i {
+        font-size: 1.2rem;
+    }
+    
+    .stat-value {
+        font-size: 1.2rem;
+    }
+    
+    .stat-label {
+        font-size: 0.65rem;
+    }
+    
+    .search-tabs {
+        gap: 8px;
+        overflow-x: auto;
+    }
+    
+    .search-tab-btn {
+        padding: 8px 12px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+    
+    .vendor-menu-row {
+        gap: 6px;
+    }
+    
+    .menu-chip {
+        padding: 5px 12px;
+        font-size: 0.65rem;
+    }
+    
+    .map-controls {
+        bottom: 80px;
+        right: 12px;
+        gap: 8px;
+    }
+    
+    .control-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+    
+    .map-container {
+        height: calc(100vh - 130px);
+        border-radius: 20px;
+    }
+    
+    .fab {
+        bottom: 75px;
+        right: 16px;
+        width: 52px;
+        height: 52px;
+    }
+    
+    .eula-text {
+        font-size: 0.7rem;
+    }
+    
+    .splash-content h1 {
+        font-size: 2.2rem;
+    }
+    
+    .splash-content i {
+        font-size: 3.5rem;
+    }
+    
+    .splash-content p {
+        font-size: 0.9rem;
+    }
 }
 
-@media (min-width: 768px) {
+/* ===== MEDIUM DEVICES (480px - 767px) ===== */
+@media (min-width: 480px) and (max-width: 767px) {
     .container {
-        max-width: 500px;
+        max-width: 100%;
+        padding: 20px 18px;
     }
     
     .tab {
-        max-width: 700px;
+        padding: 18px 18px 85px 18px;
+    }
+    
+    .bottom-nav {
+        padding: 10px 0 14px;
+    }
+    
+    .nav-btn {
+        padding: 8px 10px;
+        font-size: 0.7rem;
+    }
+    
+    .nav-btn i {
+        font-size: 1.3rem;
+    }
+    
+    .btn-primary, .btn-secondary, .btn-danger {
+        padding: 12px 20px;
+        font-size: 15px;
+    }
+    
+    .card, .vendor-card, .feed-card {
+        padding: 14px;
+        margin-bottom: 12px;
+    }
+    
+    .preferences-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .modal-content {
+        max-width: 95%;
+    }
+    
+    .suggestions-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+    
+    .feed-container {
+        max-width: 100%;
+    }
+    
+    .profile-stats {
+        flex-direction: row;
+    }
+    
+    .map-container {
+        height: 70vh;
+    }
+}
+
+/* ===== LARGE DEVICES (768px - 1023px) ===== */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .container {
+        max-width: 550px;
+        padding: 20px;
+    }
+    
+    .tab {
+        max-width: 650px;
         margin: 0 auto;
+        padding: 20px 20px 100px 20px;
     }
     
     .suggestions-grid {
@@ -1502,7 +1815,208 @@ textarea:focus {
     }
     
     .feed-container {
+        max-width: 650px;
+        margin: 0 auto;
+    }
+    
+    .preferences-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .modal-large {
+        max-width: 700px;
+    }
+    
+    .map-container {
+        height: 75vh;
+    }
+}
+
+/* ===== EXTRA LARGE DEVICES (1024px+) ===== */
+@media (min-width: 1024px) {
+    .container {
         max-width: 600px;
+        padding: 25px;
+    }
+    
+    .tab {
+        max-width: 750px;
+        margin: 0 auto;
+        padding: 25px 25px 110px 25px;
+    }
+    
+    .suggestions-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+    
+    .feed-container {
+        max-width: 750px;
+        margin: 0 auto;
+    }
+    
+    .preferences-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .modal-large {
+        max-width: 900px;
+    }
+    
+    .map-container {
+        height: 80vh;
+    }
+}
+
+/* ===== LANDSCAPE ORIENTATION ===== */
+@media (max-height: 500px) and (orientation: landscape) {
+    .tab {
+        padding: 10px 15px 70px 15px;
+    }
+    
+    .map-container {
+        height: 70vh;
+    }
+    
+    .bottom-nav {
+        padding: 6px 0 10px;
+    }
+    
+    .nav-btn {
+        padding: 4px 6px;
+    }
+    
+    .splash-content h1 {
+        font-size: 2rem;
+    }
+    
+    .splash-content i {
+        font-size: 3rem;
+    }
+}
+
+/* ===== TOUCH DEVICE OPTIMIZATION ===== */
+@media (hover: none) and (pointer: coarse) {
+    .btn-primary, .btn-secondary, .btn-danger, .nav-btn, .control-btn {
+        min-height: 48px;
+        min-width: 48px;
+    }
+    
+    .nav-btn, .control-btn {
+        padding: 12px;
+    }
+    
+    .menu-chip, .pref-option {
+        min-height: 44px;
+        padding: 10px 14px;
+    }
+    
+    .input-group input, .input-group textarea {
+        min-height: 48px;
+        padding: 14px 14px 14px 44px;
+        font-size: 16px;
+    }
+    
+    button {
+        min-height: 44px;
+    }
+}
+
+/* ===== HIGH DPI / RETINA DISPLAYS ===== */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    * {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    
+    .box-shadow {
+        text-shadow: 0 0 1px rgba(0,0,0,0.05);
+    }
+}
+
+/* ===== NARROW WIDTH (Portrait Mobile) ===== */
+@media (max-width: 320px) {
+    .container {
+        padding: 12px 10px;
+    }
+    
+    .tab {
+        padding: 10px 10px 75px 10px;
+    }
+    
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.3rem; }
+    h3 { font-size: 1rem; }
+    
+    .btn-primary, .btn-secondary {
+        padding: 9px 14px;
+        font-size: 12px;
+    }
+    
+    .card, .vendor-card, .feed-card {
+        padding: 10px;
+    }
+    
+    .modal-content {
+        border-radius: 16px;
+    }
+    
+    .bottom-nav {
+        padding: 5px 0 8px;
+    }
+    
+    .nav-btn span {
+        font-size: 0.45rem;
+    }
+}
+
+/* ===== WIDE MOBILE (Landscape or Large Phone) ===== */
+@media (max-height: 600px) {
+    .tab {
+        min-height: auto;
+        padding-bottom: 70px;
+    }
+    
+    .map-container {
+        height: 60vh;
+        max-height: 400px;
+    }
+    
+    .feed-card {
+        margin-bottom: 8px;
+    }
+    
+    .splash-content i {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .splash-content h1 {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+    }
+}
+
+/* ===== SMALL DESKTOP / TABLET ===== */
+@media (min-width: 800px) and (max-width: 1199px) {
+    .modal-overlay {
+        padding: 40px 20px;
+    }
+    
+    .bottom-nav {
+        padding: 12px 0 16px;
+    }
+}
+
+/* ===== FULL DESKTOP ===== */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 700px;
+    }
+    
+    .tab {
+        max-width: 900px;
         margin: 0 auto;
     }
 }

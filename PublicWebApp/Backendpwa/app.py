@@ -275,7 +275,7 @@ def create_vendor():
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT INTO vendors (business_name, address, latitude, longitude, category, description, logo_thumbnail)
+            INSERT INTO vendors (business_name, address, latitude, longitude, category, description, logo)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (
             data.get('business_name'),
@@ -284,7 +284,7 @@ def create_vendor():
             data.get('longitude'),
             data.get('category'),
             data.get('description'),
-            data.get('logo_thumbnail')
+            data.get('logo')
         ))
         
         vendor_id = cursor.lastrowid
@@ -403,7 +403,7 @@ def create_post():
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT INTO posts (user_id, vendor_id, title, content, post_type, rating, image_thumbnail)
+            INSERT INTO posts (user_id, vendor_id, title, content, post_type, rating, image)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (
             data['user_id'],
@@ -701,8 +701,10 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("LAKO CUSTOMER APP API")
     print("="*60)
-    print("\nRunning on: http://localhost:5000")
-    print("Test: http://localhost:5000/api/test")
+    print("\nBackend running on: http://localhost:5000")
+    print("Frontend should run on: http://localhost:5500")
+    print("\nAPI Test: http://localhost:5000/api/test")
+    print("API Base for Frontend: http://localhost:5000/api")
     print("\nMessenger Integration:")
     print("- Chat opens Messenger app directly")
     print("- Vendor can set custom messenger_id")
