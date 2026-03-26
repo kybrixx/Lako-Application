@@ -4,1246 +4,773 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#28a745">
-    <title>Lako - Street Food Discovery</title>
+    <title>Lako · Street Food Discovery & Navigation</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: #f8f9fa;
-            color: #212529;
-            transition: all 0.3s ease;
-        }
-
-        :root {
-            --primary: #28a745;
-            --primary-dark: #218838;
-            --primary-light: #34ce57;
-            --primary-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            --primary-shadow: rgba(40, 167, 69, 0.4);
-            --bg-color: #f8f9fa;
-            --card-bg: white;
-            --text-color: #212529;
-            --text-muted: #6c757d;
-            --border-color: #e9ecef;
-        }
-
-        [data-theme="green"] { --primary: #28a745; --primary-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
-        [data-theme="blue"] { --primary: #007bff; --primary-gradient: linear-gradient(135deg, #007bff 0%, #00b4ff 100%); }
-        [data-theme="purple"] { --primary: #6f42c1; --primary-gradient: linear-gradient(135deg, #6f42c1 0%, #9b59b6 100%); }
-        [data-theme="orange"] { --primary: #fd7e14; --primary-gradient: linear-gradient(135deg, #fd7e14 0%, #ffb347 100%); }
-        [data-theme="red"] { --primary: #dc3545; --primary-gradient: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%); }
-        [data-theme="teal"] { --primary: #20c997; --primary-gradient: linear-gradient(135deg, #20c997 0%, #2ecc71 100%); }
-
-        .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 100; overflow-y: auto; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; transition: all 0.2s; }
+        :root { --primary: #28a745; --primary-dark: #1e7e34; --primary-light: #48e0a0; --primary-gradient: linear-gradient(135deg, #28a745, #20c997); --primary-soft: rgba(40, 167, 69, 0.12); --bg-surface: #ffffff; --bg-page: #f8fafc; --text-muted: #475569; --border-light: #e2e8f0; --shadow-sm: 0 4px 12px rgba(0,0,0,0.05); --shadow-md: 0 8px 24px rgba(0,0,0,0.1); }
+        [data-theme="blue"] { --primary: #0d6efd; --primary-gradient: linear-gradient(135deg, #0d6efd, #0dcaf0); --primary-soft: rgba(13,110,253,0.12); }
+        [data-theme="purple"] { --primary: #6f42c1; --primary-gradient: linear-gradient(135deg, #6f42c1, #b77dff); --primary-soft: rgba(111,66,193,0.12); }
+        [data-theme="orange"] { --primary: #fd7e14; --primary-gradient: linear-gradient(135deg, #fd7e14, #ffb347); --primary-soft: rgba(253,126,20,0.12); }
+        [data-theme="teal"] { --primary: #20c997; --primary-gradient: linear-gradient(135deg, #20c997, #2ecc71); --primary-soft: rgba(32,201,151,0.12); }
+        body { background: var(--bg-page); }
+        .screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; background: var(--bg-page); z-index: 10; }
         .hidden { display: none !important; }
-
-        #splash { background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white; text-align: center; }
-        .splash-content { animation: fadeInUp 0.8s ease; }
-        .splash-content i { margin-bottom: 20px; font-size: 4rem; animation: bounce 1s ease infinite; }
-        .splash-content h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash { background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white; text-align: center; z-index: 200; }
+        .splash-content i { font-size: 4rem; margin-bottom: 1rem; animation: bounce 0.9s ease infinite; }
         .loader { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-
-        .container { padding: 20px; max-width: 500px; margin: 0 auto; }
-        .card { background: var(--card-bg); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-
-        .btn-primary { background: var(--primary-gradient); color: white; border: none; padding: 14px 24px; border-radius: 30px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--primary-shadow); }
-        .btn-secondary { background: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 14px 24px; border-radius: 30px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-secondary:hover { background: var(--primary); color: white; }
-        .btn-danger { background: #dc3545; color: white; border: none; padding: 12px 24px; border-radius: 30px; font-size: 14px; cursor: pointer; width: 100%; margin-top: 10px; }
-        .icon-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 8px; color: var(--text-muted); border-radius: 50%; transition: all 0.2s; }
-
-        .input-group { position: relative; margin-bottom: 15px; }
-        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
-        .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 14px 14px 14px 45px; border: 1px solid var(--border-color); border-radius: 30px; font-size: 16px; background: var(--card-bg); color: var(--text-color); transition: all 0.3s; }
-        .input-group input:focus, .input-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-shadow); }
-
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); display: flex; justify-content: space-around; padding: 8px 0 12px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100; }
-        .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--text-muted); padding: 6px 8px; cursor: pointer; border-radius: 30px; }
+        @keyframes bounce { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-10px); } }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; padding: 8px 0 14px; background: var(--bg-surface); border-top: 1px solid var(--border-light); z-index: 99; }
+        .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--text-muted); cursor: pointer; padding: 6px 12px; border-radius: 40px; transition: 0.2s; }
         .nav-btn i { font-size: 1.3rem; }
-        .nav-btn.active { color: var(--primary); }
-
-        .tab { padding: 15px 15px 80px 15px; min-height: 100vh; }
-        .feed-card, .vendor-card { background: var(--card-bg); border-radius: 20px; padding: 16px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.2s; }
-        .feed-card:hover, .vendor-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-        .vendor-card { display: flex; gap: 12px; }
-        .vendor-icon { width: 60px; height: 60px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; }
+        .nav-btn.active { color: var(--primary); font-weight: 500; background: var(--primary-soft); }
+        .tab { padding: 20px 16px 80px 16px; min-height: 100vh; }
+        .container { max-width: 560px; margin: 0 auto; }
+        .card, .vendor-card, .feed-card { background: var(--bg-surface); border-radius: 28px; padding: 1rem; margin-bottom: 1rem; box-shadow: var(--shadow-sm); border: 1px solid var(--border-light); transition: all 0.2s; cursor: pointer; }
+        .vendor-card { display: flex; gap: 14px; align-items: center; }
+        .vendor-icon { width: 56px; height: 56px; background: var(--primary-gradient); border-radius: 32px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0; }
         .vendor-info { flex: 1; }
-        .vote-section { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .vote-up, .vote-down { background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--text-muted); padding: 4px; border-radius: 50%; }
+        .btn-primary { background: var(--primary-gradient); border: none; padding: 12px 18px; border-radius: 40px; color: white; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: 0.2s; }
+        .btn-secondary { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); border-radius: 40px; padding: 12px 18px; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .input-group { margin-bottom: 1rem; position: relative; }
+        .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 14px 14px 14px 44px; border: 1px solid var(--border-light); border-radius: 48px; background: var(--bg-surface); font-size: 1rem; outline: none; transition: 0.2s; }
+        .input-group textarea { padding: 14px; resize: vertical; min-height: 90px; }
+        .input-group input:focus, .input-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+        .map-container { height: 65vh; border-radius: 32px; overflow: hidden; box-shadow: var(--shadow-md); margin-bottom: 12px; }
+        .map-controls { position: fixed; bottom: 100px; right: 16px; display: flex; flex-direction: column; gap: 12px; z-index: 500; }
+        .control-btn { background: var(--bg-surface); border: none; width: 48px; height: 48px; border-radius: 32px; font-size: 1.2rem; box-shadow: var(--shadow-md); color: var(--primary); cursor: pointer; transition: 0.2s; }
+        .theme-colors { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+        .theme-btn { width: 44px; height: 44px; border-radius: 44px; border: 2px solid transparent; cursor: pointer; transition: 0.2s; }
+        .theme-btn.active { border-color: white; box-shadow: 0 0 0 2px var(--primary); }
+        .toggle-switch { position: relative; display: inline-block; width: 48px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; border-radius: 34px; transition: 0.2s; }
+        .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: 0.2s; }
+        input:checked + .toggle-slider { background-color: var(--primary); }
+        input:checked + .toggle-slider:before { transform: translateX(24px); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: var(--bg-surface); border-radius: 32px; max-width: 520px; width: 100%; max-height: 85vh; overflow: auto; }
+        .modal-header { background: var(--primary-gradient); padding: 18px; color: white; border-radius: 32px 32px 0 0; position: relative; }
+        .close-modal { position: absolute; right: 20px; top: 18px; background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; }
+        .feed-card img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 20px; margin-top: 8px; background: #eef2ff; }
+        .vote-section { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .vote-up, .vote-down { background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--text-muted); padding: 4px; border-radius: 30px; transition: 0.2s; }
         .vote-up.voted { color: var(--primary); }
-        .vote-down.voted { color: #dc3545; }
-        .vote-score { font-weight: bold; min-width: 30px; text-align: center; color: var(--primary); }
-        .post-meta { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
-        .post-badge { background: rgba(0,0,0,0.05); padding: 2px 10px; border-radius: 20px; font-size: 0.65rem; }
-        .post-actions { display: flex; gap: 20px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); }
-        .post-actions button { background: none; border: none; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; }
-
-        .map-container { height: calc(100vh - 130px); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .map-controls { position: fixed; bottom: 90px; right: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
-        .control-btn { background: var(--card-bg); border: none; padding: 12px; border-radius: 50%; width: 48px; height: 48px; box-shadow: 0 2px 12px rgba(0,0,0,0.15); cursor: pointer; color: var(--primary); }
-
-        .search-bar { display: flex; gap: 10px; margin-bottom: 20px; background: var(--card-bg); border-radius: 50px; padding: 5px 15px; align-items: center; border: 1px solid var(--border-color); }
-        .search-bar input { flex: 1; padding: 12px 0; border: none; background: transparent; font-size: 16px; }
-        .search-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); }
-        .search-tab-btn { background: none; border: none; padding: 10px 16px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+        .vote-down.voted { color: #ef4444; }
+        .post-badge { background: var(--primary-soft); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; color: var(--primary); display: inline-block; }
+        .post-meta { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .post-actions { display: flex; gap: 20px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light); }
+        .post-actions button { background: none; border: none; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 30px; }
+        .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
+        .empty-state i { font-size: 3rem; margin-bottom: 15px; opacity: 0.5; }
+        .menu-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-soft); padding: 6px 14px; border-radius: 40px; font-size: 0.7rem; font-weight: 500; color: var(--primary); cursor: pointer; transition: 0.2s; }
+        .vendor-menu-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-light); }
+        .setting-item:last-child { border-bottom: none; }
+        .search-bar { display: flex; gap: 10px; margin-bottom: 20px; background: var(--bg-surface); border-radius: 50px; padding: 5px 15px; align-items: center; border: 1px solid var(--border-light); }
+        .search-bar input { flex: 1; padding: 12px 0; border: none; background: transparent; font-size: 16px; outline: none; }
+        .search-bar button { background: none; border: none; color: var(--primary); font-size: 1.1rem; cursor: pointer; }
+        .search-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-light); }
+        .search-tab-btn { background: none; border: none; padding: 10px 16px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; gap: 6px; transition: 0.2s; }
         .search-tab-btn.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
-
-        .profile-stats { display: flex; justify-content: space-around; margin: 20px 0; padding: 20px; background: var(--card-bg); border-radius: 20px; }
+        .profile-stats { display: flex; justify-content: space-around; margin: 20px 0; padding: 20px; background: var(--bg-surface); border-radius: 20px; }
         .stat { text-align: center; }
         .stat i { font-size: 1.5rem; color: var(--primary); display: block; margin-bottom: 8px; }
         .stat-value { font-size: 1.5rem; font-weight: bold; }
-        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
-        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 24px; transition: 0.3s; }
-        .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: 0.3s; }
-        input:checked + .toggle-slider { background-color: var(--primary); }
-        input:checked + .toggle-slider:before { transform: translateX(26px); }
-
-        .theme-colors { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
-        .theme-btn { width: 45px; height: 45px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
-        .theme-btn.active { border-color: var(--text-color); transform: scale(1.1); }
-
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: var(--card-bg); border-radius: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; }
-        .modal-header { padding: 20px; background: var(--primary-gradient); color: white; position: relative; }
-        .close-modal { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; position: absolute; right: 20px; top: 20px; }
-        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
-        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
-        .empty-state i { font-size: 3rem; margin-bottom: 15px; }
-        
+        .btn-danger { background: #dc3545; color: white; border: none; padding: 12px 24px; border-radius: 40px; font-size: 14px; cursor: pointer; width: 100%; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .icon-btn { background: none; border: none; cursor: pointer; }
+        .badge-distance { background: var(--primary-soft); border-radius: 20px; padding: 2px 8px; font-size: 0.7rem; color: var(--primary); margin-left: 8px; }
+        .toast-notification { position: fixed; bottom: 100px; left: 16px; right: 16px; background: var(--primary-gradient); color: white; padding: 16px; border-radius: 28px; z-index: 1000; box-shadow: var(--shadow-md); display: flex; justify-content: space-between; align-items: center; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @media (max-width: 480px) { .container { padding: 15px; } .nav-btn span { font-size: 0.55rem; } }
     </style>
 </head>
 <body data-theme="green">
-    <div id="app"></div>
+<div id="app"></div>
 
-    <script>
-        // ============= API CONFIGURATION =============
-        const API_BASE_URL = 'http://localhost:5000/api';
+<script>
+    // ======================== BACKEND API CONFIGURATION ========================
+    const API_BASE = 'http://localhost:5000/api';
+    
+    // Global state
+    let currentUser = null;
+    let vendors = [];
+    let posts = [];
+    let shortlist = [];
+    let userVotes = {};
+    let currentLocation = null;
+    let map = null;
+    let userMarker = null;
+    let watchId = null;
+    let geofenceAlerts = [];
+    let userPreferences = {
+        theme: localStorage.getItem('theme') || 'green',
+        radius: 2,
+        categories: ['BBQ', 'Fishball', 'Isaw', 'Siomai', 'Turon', 'Kwek-Kwek', 'Burger', 'Fried Chicken'],
+        selectedCategories: [],
+        notifications: { nearbyVendors: true, newPosts: true, comments: true }
+    };
+    
+    document.body.setAttribute('data-theme', userPreferences.theme);
+    
+    // Helper functions
+    function escapeHtml(str) { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
+    function formatDate(dateString) { if (!dateString) return ''; const date = new Date(dateString); return date.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+    function truncate(str, length) { if (!str) return ''; return str.length <= length ? str : str.substring(0, length) + '…'; }
+    function calculateDistance(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180; const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2); const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c; }
+    
+    // API functions
+    async function apiRequest(endpoint, options = {}) {
+        try {
+            const response = await fetch(`${API_BASE}${endpoint}`, { headers: { 'Content-Type': 'application/json' }, ...options });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Request failed');
+            return data;
+        } catch (error) { console.error('API Error:', error); throw error; }
+    }
+    
+    async function login(email, password) {
+        try {
+            const data = await apiRequest('/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+            if (data.success) { currentUser = { id: data.id, full_name: data.full_name, email: data.email }; localStorage.setItem('userId', data.id); return true; }
+            return false;
+        } catch (error) { return false; }
+    }
+    
+    async function register(fullName, email, phone, password) {
+        try { await apiRequest('/register', { method: 'POST', body: JSON.stringify({ full_name: fullName, email, phone, password }) }); return true; } 
+        catch (error) { return false; }
+    }
+    
+    async function logout() { localStorage.removeItem('userId'); currentUser = null; if (watchId) navigator.geolocation.clearWatch(watchId); }
+    
+    async function loadUser(userId) {
+        try { const user = await apiRequest(`/users/${userId}`); currentUser = user; return true; } 
+        catch (error) { return false; }
+    }
+    
+    async function fetchVendors() { try { vendors = await apiRequest('/vendors'); return vendors; } catch (error) { vendors = []; return []; } }
+    async function fetchPosts() { 
+        try { 
+            const postsData = await apiRequest('/posts?sort=new'); 
+            posts = postsData.map(post => ({
+                ...post,
+                vendor_name: post.vendor_name || 'Unknown Vendor',
+                image_url: post.image || post.image_url
+            }));
+            return posts; 
+        } catch (error) { 
+            console.error('Error fetching posts:', error);
+            posts = []; 
+            return []; 
+        } 
+    }
+    async function fetchShortlist() { if (!currentUser) return []; try { shortlist = await apiRequest(`/shortlist/user/${currentUser.id}`); return shortlist; } catch (error) { shortlist = []; return []; } }
+    async function fetchUserVotes() { if (!currentUser) return {}; try { const votes = await apiRequest(`/votes/user/${currentUser.id}`); userVotes = {}; votes.forEach(v => { userVotes[v.post_id] = v.vote_type; }); return userVotes; } catch (error) { return {}; } }
+    async function addToShortlist(vendorId) { try { await apiRequest('/shortlist', { method: 'POST', body: JSON.stringify({ user_id: currentUser.id, vendor_id: vendorId }) }); await fetchShortlist(); return true; } catch (error) { return false; } }
+    async function removeFromShortlist(vendorId) { try { await apiRequest(`/shortlist/${vendorId}/user/${currentUser.id}`, { method: 'DELETE' }); await fetchShortlist(); return true; } catch (error) { return false; } }
+    async function createPost(postData) { 
+        try { 
+            const post = await apiRequest('/posts', { 
+                method: 'POST', 
+                body: JSON.stringify({ ...postData, user_id: currentUser.id }) 
+            });
+            if (postData.vendor_id) {
+                const vendor = vendors.find(v => v.id === postData.vendor_id);
+                if (vendor) {
+                    post.vendor_name = vendor.business_name;
+                }
+            }
+            return post; 
+        } catch (error) { 
+            console.error('Error creating post:', error);
+            throw error; 
+        } 
+    }
+    async function addComment(postId, content) { try { return await apiRequest('/comments', { method: 'POST', body: JSON.stringify({ post_id: postId, user_id: currentUser.id, content }) }); } catch (error) { return false; } }
+    async function vote(postId, voteType) { try { await apiRequest('/votes', { method: 'POST', body: JSON.stringify({ user_id: currentUser.id, post_id: postId, vote_type: voteType }) }); await fetchUserVotes(); await fetchPosts(); return true; } catch (error) { return false; } }
+    async function logActivity(activityType, vendorId) { if (!userPreferences.notifications.nearbyVendors) return; try { await apiRequest('/activities', { method: 'POST', body: JSON.stringify({ user_id: currentUser.id, vendor_id: vendorId, activity_type: activityType }) }); } catch (e) {} }
+    async function getMessengerLink(vendorId) { try { return await apiRequest(`/vendors/${vendorId}/messenger`); } catch (e) { return { messenger_url: 'https://m.me/lakoapp' }; } }
+    
+    // ======================== REAL-TIME LOCATION & GEOFENCING ========================
+    function startLocationTracking() {
+        if (!navigator.geolocation) {
+            console.error('Geolocation not supported');
+            alert('Location services not available on this device');
+            return;
+        }
+        if (watchId) navigator.geolocation.clearWatch(watchId);
         
-        // Global state
-        let currentUser = null;
-        let currentLocation = null;
-        let map = null;
-        let mapMarkers = [];
-        let vendors = [];
-        let posts = [];
-        let shortlist = [];
-        let activities = [];
-        let userVotes = {};
-        
-        // User preferences
-        let userPreferences = {
-            notifications: { posts: true, comments: true, suggestions: true },
-            feedContent: { reviews: true, questions: true },
-            privacy: { shareLocation: true, trackActivity: true },
-            theme: localStorage.getItem('theme') || 'green'
-        };
-        
-        // Apply theme
-        document.body.setAttribute('data-theme', userPreferences.theme);
-        
-        // ============= API HELPER FUNCTIONS =============
-        async function apiRequest(endpoint, options = {}) {
-            const url = `${API_BASE_URL}${endpoint}`;
-            const headers = {
-                'Content-Type': 'application/json',
-                ...options.headers
-            };
-            
-            try {
-                const response = await fetch(url, {
-                    ...options,
-                    headers
-                });
+        watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                const newLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                const accuracy = pos.coords.accuracy;
+                currentLocation = newLoc;
                 
-                const data = await response.json();
+                console.log(`Location updated: ${newLoc.lat.toFixed(4)}, ${newLoc.lng.toFixed(4)} (±${Math.round(accuracy)}m)`);
                 
-                if (!response.ok) {
-                    throw new Error(data.error || 'API request failed');
+                if (map && userMarker) {
+                    userMarker.setLatLng([newLoc.lat, newLoc.lng]);
+                    if (accuracy < 100) map.setView([newLoc.lat, newLoc.lng], 16);
+                } else if (map) {
+                    userMarker = L.marker([newLoc.lat, newLoc.lng], { 
+                        icon: L.divIcon({ 
+                            html: '<i class="fas fa-user-circle" style="font-size: 28px; color: var(--primary);"></i>', 
+                            iconSize: [28, 28],
+                            className: 'user-location-marker'
+                        }) 
+                    }).addTo(map).bindPopup('📍 You are here');
+                    map.setView([newLoc.lat, newLoc.lng], 15);
                 }
                 
-                return data;
-            } catch (error) {
-                console.error('API Error:', error);
-                throw error;
-            }
-        }
-        
-        // ============= AUTHENTICATION =============
-        async function login(email, password) {
-            try {
-                const data = await apiRequest('/login', {
-                    method: 'POST',
-                    body: JSON.stringify({ email, password })
-                });
-                
-                if (data.success) {
-                    currentUser = {
-                        id: data.id,
-                        full_name: data.full_name,
-                        email: data.email,
-                        preferences: data.preferences || {}
-                    };
-                    localStorage.setItem('user_id', currentUser.id);
-                    return { success: true };
+                checkGeofence(newLoc);
+                updateNearbyVendors(newLoc);
+                renderNearbyList();
+            },
+            (err) => {
+                console.error('Location error:', err.message);
+                switch(err.code) {
+                    case err.PERMISSION_DENIED:
+                        console.log('Location permission denied. Please enable in settings.');
+                        break;
+                    case err.POSITION_UNAVAILABLE:
+                        console.log('Location information unavailable.');
+                        break;
+                    case err.TIMEOUT:
+                        console.log('Location request timeout.');
+                        break;
                 }
-                return { success: false, error: 'Login failed' };
-            } catch (error) {
-                return { success: false, error: error.message };
+            },
+            { 
+                enableHighAccuracy: true, 
+                maximumAge: 3000,
+                timeout: 10000 
             }
-        }
-        
-        async function register(userData) {
-            try {
-                const data = await apiRequest('/register', {
-                    method: 'POST',
-                    body: JSON.stringify(userData)
-                });
-                
-                if (data.success) {
-                    return { success: true };
+        );
+    }
+    
+    function checkGeofence(location) {
+        if (!userPreferences.notifications.nearbyVendors) return;
+        vendors.forEach(vendor => {
+            if (vendor.latitude && vendor.longitude) {
+                const dist = calculateDistance(location.lat, location.lng, vendor.latitude, vendor.longitude);
+                if (dist <= 0.1 && !geofenceAlerts.includes(vendor.id)) {
+                    geofenceAlerts.push(vendor.id);
+                    if (Notification.permission === 'granted') {
+                        new Notification(`🍜 ${vendor.business_name} is nearby!`, { body: `Only ${Math.round(dist * 1000)}m away! Tap to visit.` });
+                    }
+                    showGeofenceToast(vendor);
+                } else if (dist > 0.15) {
+                    geofenceAlerts = geofenceAlerts.filter(id => id !== vendor.id);
                 }
-                return { success: false, error: data.error };
-            } catch (error) {
-                return { success: false, error: error.message };
             }
+        });
+    }
+    
+    function showGeofenceToast(vendor) {
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerHTML = `<div><i class="fas fa-location-dot"></i> <strong>${escapeHtml(vendor.business_name)}</strong><br><small>Less than 100m away!</small></div><button onclick="this.parentElement.remove(); showVendorDetail(${vendor.id})" style="background:white; border:none; padding:8px 16px; border-radius:40px; color:var(--primary); font-weight:bold; cursor:pointer;">View</button>`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 8000);
+    }
+    
+    function updateNearbyVendors(location) {
+        const nearby = vendors.filter(v => v.latitude && v.longitude && calculateDistance(location.lat, location.lng, v.latitude, v.longitude) <= userPreferences.radius);
+        const nearbyDiv = document.getElementById('nearbyVendorsList');
+        if (nearbyDiv && nearby.length) {
+            nearbyDiv.innerHTML = nearby.slice(0, 8).map(v => `<span class="menu-chip" onclick="showVendorDetail(${v.id})"><i class="fas fa-store"></i> ${escapeHtml(v.business_name)}</span>`).join('');
         }
-        
-        async function logout() {
-            localStorage.removeItem('user_id');
-            currentUser = null;
+    }
+    
+    function renderNearbyList() {
+        const container = document.getElementById('nearbyFullList');
+        if (!container || !currentLocation) return;
+        let filtered = vendors.filter(v => v.latitude && v.longitude && calculateDistance(currentLocation.lat, currentLocation.lng, v.latitude, v.longitude) <= userPreferences.radius);
+        if (userPreferences.selectedCategories.length) {
+            filtered = filtered.filter(v => userPreferences.selectedCategories.includes(v.category));
         }
-        
-        async function loadUser(userId) {
-            try {
-                const user = await apiRequest(`/users/${userId}`);
-                currentUser = user;
-                return true;
-            } catch (error) {
-                return false;
-            }
-        }
-        
-        // ============= DATA FETCHING =============
-        async function fetchVendors() {
-            try {
-                vendors = await apiRequest('/vendors');
-                return vendors;
-            } catch (error) {
-                console.error('Error fetching vendors:', error);
-                return [];
-            }
-        }
-        
-        async function fetchPosts(sort = 'new') {
-            try {
-                posts = await apiRequest(`/posts?sort=${sort}`);
-                return posts;
-            } catch (error) {
-                console.error('Error fetching posts:', error);
-                return [];
-            }
-        }
-        
-        async function fetchShortlist() {
-            if (!currentUser) return [];
-            try {
-                shortlist = await apiRequest(`/shortlist/user/${currentUser.id}`);
-                return shortlist;
-            } catch (error) {
-                console.error('Error fetching shortlist:', error);
-                return [];
-            }
-        }
-        
-        async function fetchActivities() {
-            if (!currentUser) return [];
-            try {
-                activities = await apiRequest(`/activities/user/${currentUser.id}`);
-                return activities;
-            } catch (error) {
-                console.error('Error fetching activities:', error);
-                return [];
-            }
-        }
-        
-        async function fetchUserVotes() {
-            if (!currentUser) return {};
-            try {
-                const votes = await apiRequest(`/votes/user/${currentUser.id}`);
-                userVotes = {};
-                votes.forEach(vote => {
-                    userVotes[vote.post_id] = vote.vote_type;
-                });
-                return userVotes;
-            } catch (error) {
-                return {};
-            }
-        }
-        
-        async function addToShortlist(vendorId) {
-            try {
-                await apiRequest('/shortlist', {
-                    method: 'POST',
-                    body: JSON.stringify({ user_id: currentUser.id, vendor_id: vendorId })
-                });
-                await fetchShortlist();
-                return true;
-            } catch (error) {
-                console.error('Error adding to shortlist:', error);
-                return false;
-            }
-        }
-        
-        async function removeFromShortlist(vendorId) {
-            try {
-                await apiRequest(`/shortlist/${vendorId}/user/${currentUser.id}`, {
-                    method: 'DELETE'
-                });
-                await fetchShortlist();
-                return true;
-            } catch (error) {
-                console.error('Error removing from shortlist:', error);
-                return false;
-            }
-        }
-        
-        async function createPost(postData) {
-            try {
-                const data = await apiRequest('/posts', {
-                    method: 'POST',
-                    body: JSON.stringify({ ...postData, user_id: currentUser.id })
-                });
-                return data;
-            } catch (error) {
-                console.error('Error creating post:', error);
-                throw error;
-            }
-        }
-        
-        async function addComment(postId, content) {
-            try {
-                await apiRequest('/comments', {
-                    method: 'POST',
-                    body: JSON.stringify({ post_id: postId, user_id: currentUser.id, content })
-                });
-                return true;
-            } catch (error) {
-                console.error('Error adding comment:', error);
-                return false;
-            }
-        }
-        
-        async function vote(postId, voteType) {
-            try {
-                await apiRequest('/votes', {
-                    method: 'POST',
-                    body: JSON.stringify({ user_id: currentUser.id, post_id: postId, vote_type: voteType })
-                });
-                await fetchUserVotes();
-                await fetchPosts();
-                return true;
-            } catch (error) {
-                console.error('Error voting:', error);
-                return false;
-            }
-        }
-        
-        async function logActivity(activityType, vendorId) {
-            if (!userPreferences.privacy.trackActivity || !currentUser) return;
-            try {
-                await apiRequest('/activities', {
-                    method: 'POST',
-                    body: JSON.stringify({ user_id: currentUser.id, vendor_id: vendorId, activity_type: activityType })
-                });
-            } catch (error) {
-                console.error('Error logging activity:', error);
-            }
-        }
-        
-        async function getMessengerLink(vendorId) {
-            try {
-                return await apiRequest(`/vendors/${vendorId}/messenger`);
-            } catch (error) {
-                return { messenger_url: 'https://m.me/lakoapp' };
-            }
-        }
-        
-        // ============= UI HELPER FUNCTIONS =============
-        function escapeHtml(str) {
-            if (!str) return '';
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-        
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        }
-        
-        function truncate(str, length) {
-            if (!str) return '';
-            return str.length <= length ? str : str.substring(0, length) + '...';
-        }
-        
-        // ============= SCREEN NAVIGATION =============
-        async function showSplash() {
-            const splashHtml = `
-                <div id="splash" class="screen">
-                    <div class="splash-content">
-                        <i class="fas fa-utensils"></i>
-                        <h1>LAKO</h1>
-                        <p>Discover Street Food</p>
-                        <div class="loader"></div>
+        filtered.sort((a, b) => {
+            const distA = calculateDistance(currentLocation.lat, currentLocation.lng, a.latitude, a.longitude);
+            const distB = calculateDistance(currentLocation.lat, currentLocation.lng, b.latitude, b.longitude);
+            return distA - distB;
+        });
+        container.innerHTML = filtered.map(v => {
+            const dist = calculateDistance(currentLocation.lat, currentLocation.lng, v.latitude, v.longitude);
+            return `<div class="vendor-card" onclick="showVendorDetail(${v.id})">
+                <div class="vendor-icon"><i class="fas fa-store"></i></div>
+                <div class="vendor-info">
+                    <h4>${escapeHtml(v.business_name)} <span class="badge-distance">${dist.toFixed(1)}km</span></h4>
+                    <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(v.address || 'No address')}</p>
+                    <p><i class="fas fa-star"></i> ${v.rating || 0} ⭐ (${v.review_count || 0} reviews)</p>
+                    <div class="vendor-menu-row">
+                        <span class="menu-chip" onclick="event.stopPropagation(); navigateToVendor(${v.id})"><i class="fas fa-directions"></i> Navigate</span>
+                        <span class="menu-chip" onclick="event.stopPropagation(); messageVendor(${v.id})"><i class="fab fa-facebook-messenger"></i> Chat</span>
+                        <span class="menu-chip" onclick="event.stopPropagation(); toggleShortlistQuick(${v.id})"><i class="fas fa-heart"></i> Save</span>
                     </div>
                 </div>
-            `;
-            document.getElementById('app').innerHTML = splashHtml;
-            
-            // Check for existing session
-            const userId = localStorage.getItem('user_id');
-            if (userId) {
-                const loaded = await loadUser(userId);
-                if (loaded) {
-                    await loadInitialData();
-                    setTimeout(() => showMainApp(), 500);
-                    return;
-                }
-            }
-            setTimeout(() => showLanding(), 2000);
-        }
-        
-        async function loadInitialData() {
-            await Promise.all([
-                fetchVendors(),
-                fetchPosts(),
-                fetchShortlist(),
-                fetchActivities(),
-                fetchUserVotes()
-            ]);
-        }
-        
-        function showLanding() {
-            const landingHtml = `
-                <div id="landing" class="screen">
-                    <div class="container" style="padding-top: 20%;">
-                        <div class="card" style="text-align: center;">
-                            <i class="fas fa-utensils" style="font-size: 4rem; color: var(--primary); margin-bottom: 15px;"></i>
-                            <h1 style="color: var(--primary); margin-bottom: 10px;">LAKO</h1>
-                            <p style="color: var(--text-muted); margin-bottom: 30px;">Discover street food vendors near you</p>
-                            <button id="loginBtn" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
-                            <button id="registerBtn" class="btn-secondary" style="margin-top: 12px;"><i class="fas fa-user-plus"></i> Create Account</button>
-                        </div>
-                    </div>
+            </div>`;
+        }).join('');
+        if (!filtered.length) container.innerHTML = '<div class="empty-state"><i class="fas fa-map-pin"></i><p>No vendors within your radius. Try increasing the radius in settings.</p></div>';
+    }
+    
+    // ======================== UI RENDERING ========================
+    function renderFeed() {
+        const container = document.getElementById('feedList');
+        if (!container) return;
+        if (!posts.length) { container.innerHTML = '<div class="empty-state"><i class="fas fa-utensils"></i><p>No posts yet. Be the first to share your food experience!</p></div>'; return; }
+        container.innerHTML = posts.map(post => {
+            const score = (post.upvotes || 0) - (post.downvotes || 0);
+            const isUpvoted = userVotes[post.id] === 1;
+            const isDownvoted = userVotes[post.id] === -1;
+            return `<div class="feed-card" onclick="showPostDetail(${post.id})">
+                <div class="vote-section">
+                    <button class="vote-up ${isUpvoted ? 'voted' : ''}" onclick="event.stopPropagation(); handleVote(${post.id}, 1)"><i class="fas fa-arrow-up"></i></button>
+                    <span class="vote-score">${score}</span>
+                    <button class="vote-down ${isDownvoted ? 'voted' : ''}" onclick="event.stopPropagation(); handleVote(${post.id}, -1)"><i class="fas fa-arrow-down"></i></button>
                 </div>
-            `;
-            document.getElementById('app').innerHTML = landingHtml;
-            
-            document.getElementById('loginBtn').onclick = showLogin;
-            document.getElementById('registerBtn').onclick = showRegister;
-        }
-        
-        function showLogin() {
-            const loginHtml = `
-                <div id="login" class="screen">
-                    <div class="container" style="padding-top: 15%;">
-                        <div class="card">
-                            <h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Welcome Back</h2>
-                            <div class="input-group">
-                                <i class="fas fa-envelope"></i>
-                                <input type="email" id="loginEmail" placeholder="Gmail Address">
-                            </div>
-                            <div class="input-group">
-                                <i class="fas fa-lock"></i>
-                                <input type="password" id="loginPassword" placeholder="Password">
-                            </div>
-                            <div id="loginMessage" style="color: #dc3545; font-size: 0.85rem; margin-bottom: 10px;"></div>
-                            <button id="doLogin" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
-                            <button id="backToLanding" class="btn-secondary" style="margin-top: 12px;"><i class="fas fa-arrow-left"></i> Back</button>
-                        </div>
-                    </div>
+                <div class="post-meta">
+                    <i class="fas fa-user-circle"></i> ${escapeHtml(post.author_name || 'Foodie')}
+                    <span>• ${formatDate(post.created_at)}</span>
+                    ${post.rating ? `<span class="post-badge"><i class="fas fa-star"></i> ${post.rating}/5</span>` : ''}
                 </div>
-            `;
-            document.getElementById('app').innerHTML = loginHtml;
-            
-            document.getElementById('doLogin').onclick = async () => {
-                const email = document.getElementById('loginEmail').value;
-                const password = document.getElementById('loginPassword').value;
-                const msgDiv = document.getElementById('loginMessage');
-                
-                if (!email || !password) {
-                    msgDiv.textContent = 'Please enter email and password';
-                    return;
-                }
-                
-                if (!email.endsWith('@gmail.com')) {
-                    msgDiv.textContent = 'Only Gmail addresses are allowed';
-                    return;
-                }
-                
-                const result = await login(email, password);
-                if (result.success) {
-                    await loadInitialData();
-                    showMainApp();
-                } else {
-                    msgDiv.textContent = result.error || 'Login failed';
-                }
-            };
-            document.getElementById('backToLanding').onclick = showLanding;
-        }
-        
-        function showRegister() {
-            const registerHtml = `
-                <div id="register" class="screen">
-                    <div class="container" style="padding-top: 10%;">
-                        <div class="card">
-                            <h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Create Account</h2>
-                            <div class="input-group">
-                                <i class="fas fa-user"></i>
-                                <input type="text" id="regName" placeholder="Full Name">
-                            </div>
-                            <div class="input-group">
-                                <i class="fas fa-envelope"></i>
-                                <input type="email" id="regEmail" placeholder="Gmail Address">
-                            </div>
-                            <div class="input-group">
-                                <i class="fas fa-phone"></i>
-                                <input type="tel" id="regPhone" placeholder="Phone Number">
-                            </div>
-                            <div class="input-group">
-                                <i class="fas fa-lock"></i>
-                                <input type="password" id="regPassword" placeholder="Password">
-                            </div>
-                            <div id="registerMessage" style="color: #dc3545; font-size: 0.85rem; margin-bottom: 10px;"></div>
-                            <button id="doRegister" class="btn-primary"><i class="fas fa-check-circle"></i> Sign Up</button>
-                            <button id="backToLogin" class="btn-secondary" style="margin-top: 12px;"><i class="fas fa-arrow-left"></i> Back to Login</button>
-                        </div>
-                    </div>
+                <h3>${escapeHtml(post.title)}</h3>
+                <div class="post-content-text">${truncate(escapeHtml(post.content), 120)}</div>
+                ${post.image_url ? `<img src="${post.image_url}" onerror="this.style.display='none'" style="max-height: 180px; border-radius: 16px; margin-top: 8px; width: 100%; object-fit: cover;">` : ''}
+                ${post.vendor_name ? `<div class="post-meta"><i class="fas fa-store"></i> ${escapeHtml(post.vendor_name)}</div>` : ''}
+                <div class="post-actions">
+                    <button onclick="event.stopPropagation(); showPostDetail(${post.id})"><i class="fas fa-comment"></i> ${post.comment_count || 0}</button>
+                    <button onclick="event.stopPropagation(); sharePost(${post.id})"><i class="fas fa-share"></i> Share</button>
                 </div>
-            `;
-            document.getElementById('app').innerHTML = registerHtml;
-            
-            document.getElementById('doRegister').onclick = async () => {
-                const full_name = document.getElementById('regName').value;
-                const email = document.getElementById('regEmail').value;
-                const phone = document.getElementById('regPhone').value;
-                const password = document.getElementById('regPassword').value;
-                const msgDiv = document.getElementById('registerMessage');
-                
-                if (!full_name || !email || !password) {
-                    msgDiv.textContent = 'Please fill all required fields';
-                    return;
-                }
-                
-                if (!email.endsWith('@gmail.com')) {
-                    msgDiv.textContent = 'Only Gmail addresses are allowed';
-                    return;
-                }
-                
-                const result = await register({ full_name, email, phone, password });
-                if (result.success) {
-                    msgDiv.style.color = '#28a745';
-                    msgDiv.textContent = 'Registration successful! Please login.';
-                    setTimeout(() => showLogin(), 2000);
-                } else {
-                    msgDiv.textContent = result.error;
-                }
-            };
-            document.getElementById('backToLogin').onclick = showLogin;
+            </div>`;
+        }).join('');
+    }
+    
+    function renderShortlist() {
+        const container = document.getElementById('shortlistContainer');
+        if (!container) return;
+        if (!shortlist.length) { container.innerHTML = '<div class="empty-state"><i class="fas fa-heart-o"></i><p>No saved vendors yet. Tap the heart icon to save your favorites!</p></div>'; return; }
+        container.innerHTML = shortlist.map(vendor => `<div class="vendor-card" onclick="showVendorDetail(${vendor.id})">
+            <div class="vendor-icon"><i class="fas fa-store"></i></div>
+            <div class="vendor-info">
+                <h4>${escapeHtml(vendor.business_name)}</h4>
+                <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(vendor.address || 'No address')}</p>
+                <p><i class="fas fa-star"></i> ${vendor.rating || 0} (${vendor.review_count || 0} reviews)</p>
+                <div class="vendor-menu-row">
+                    <span class="menu-chip" onclick="event.stopPropagation(); navigateToVendor(${vendor.id})"><i class="fas fa-directions"></i> Navigate</span>
+                    <span class="menu-chip" onclick="event.stopPropagation(); messageVendor(${vendor.id})"><i class="fab fa-facebook-messenger"></i> Chat</span>
+                    <span class="menu-chip" onclick="event.stopPropagation(); removeFromShortlistUI(${vendor.id})"><i class="fas fa-trash"></i> Remove</span>
+                </div>
+            </div>
+        </div>`).join('');
+    }
+    
+    function initMap() {
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer) return;
+        if (map) map.remove();
+        
+        const center = currentLocation || { lat: 13.9500, lng: 121.3167 };
+        map = L.map('map').setView([center.lat, center.lng], 14);
+        
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Add geofence circle visualization (optional - shows 100m radius)
+        if (currentLocation) {
+            L.circle([currentLocation.lat, currentLocation.lng], {
+                color: 'var(--primary)',
+                fillColor: 'var(--primary-soft)',
+                fillOpacity: 0.1,
+                weight: 2,
+                radius: userPreferences.radius * 1000
+            }).addTo(map).bindPopup(`Search radius: ${userPreferences.radius} km`);
         }
         
-        // ============= MAIN APP =============
-        async function showMainApp() {
-            // Get user location
-            if (userPreferences.privacy.shareLocation && navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        currentLocation = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        };
-                        if (map) {
-                            map.setView([currentLocation.lat, currentLocation.lng], 14);
+        // Add vendor markers
+        vendors.forEach(vendor => {
+            if (vendor.latitude && vendor.longitude) {
+                const markerColor = vendor.rating >= 4 ? '#28a745' : vendor.rating >= 3 ? '#ffc107' : '#dc3545';
+                const marker = L.marker([vendor.latitude, vendor.longitude], {
+                    icon: L.Icon.Default.extend({
+                        options: {
+                            className: 'vendor-marker'
                         }
-                    },
-                    (error) => console.log('Geolocation error:', error)
-                );
-            }
-            
-            const mainHtml = `
-                <div id="mainApp" class="screen">
-                    <div class="bottom-nav">
-                        <button data-tab="feed" class="nav-btn active"><i class="fas fa-newspaper"></i><span>Feed</span></button>
-                        <button data-tab="map" class="nav-btn"><i class="fas fa-map-marked-alt"></i><span>Map</span></button>
-                        <button data-tab="search" class="nav-btn"><i class="fas fa-search"></i><span>Search</span></button>
-                        <button data-tab="shortlist" class="nav-btn"><i class="fas fa-heart"></i><span>Saved</span></button>
-                        <button data-tab="profile" class="nav-btn"><i class="fas fa-user-circle"></i><span>Profile</span></button>
-                    </div>
-                    
-                    <div id="feedTab" class="tab active">
-                        <div class="container">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                <h3><i class="fas fa-fire"></i> Foodie Feed</h3>
-                                <button id="createPostBtn" class="icon-btn"><i class="fas fa-plus-circle"></i></button>
-                            </div>
-                            <div id="feedList"></div>
-                        </div>
-                    </div>
-                    
-                    <div id="mapTab" class="tab hidden">
-                        <div id="map" class="map-container"></div>
-                        <div class="map-controls">
-                            <button id="centerLocationBtn" class="control-btn" title="My Location"><i class="fas fa-location-dot"></i></button>
-                            <button id="refreshMapBtn" class="control-btn" title="Refresh"><i class="fas fa-sync-alt"></i></button>
-                        </div>
-                    </div>
-                    
-                    <div id="searchTab" class="tab hidden">
-                        <div class="container">
-                            <div class="search-bar">
-                                <i class="fas fa-search"></i>
-                                <input type="text" id="searchInput" placeholder="Search vendors, food, or posts...">
-                                <button id="searchBtn"><i class="fas fa-arrow-right"></i></button>
-                            </div>
-                            <div class="search-tabs">
-                                <button class="search-tab-btn active" data-type="vendors"><i class="fas fa-store"></i> Vendors</button>
-                                <button class="search-tab-btn" data-type="posts"><i class="fas fa-newspaper"></i> Posts</button>
-                            </div>
-                            <div id="searchResults"></div>
-                        </div>
-                    </div>
-                    
-                    <div id="shortlistTab" class="tab hidden">
-                        <div class="container">
-                            <h3><i class="fas fa-heart"></i> Saved Vendors</h3>
-                            <div id="shortlistList"></div>
-                        </div>
-                    </div>
-                    
-                    <div id="profileTab" class="tab hidden">
-                        <div class="container">
-                            <div class="card" style="text-align: center;">
-                                <i class="fas fa-user-circle" style="font-size: 4rem; color: var(--primary);"></i>
-                                <h3 id="profileName">${escapeHtml(currentUser?.full_name || '')}</h3>
-                                <p id="profileEmail">${escapeHtml(currentUser?.email || '')}</p>
-                            </div>
-                            
-                            <div class="card">
-                                <h4><i class="fas fa-palette"></i> Theme</h4>
-                                <div class="theme-colors">
-                                    <button class="theme-btn" data-theme="green" style="background: #28a745;"></button>
-                                    <button class="theme-btn" data-theme="blue" style="background: #007bff;"></button>
-                                    <button class="theme-btn" data-theme="purple" style="background: #6f42c1;"></button>
-                                    <button class="theme-btn" data-theme="orange" style="background: #fd7e14;"></button>
-                                    <button class="theme-btn" data-theme="red" style="background: #dc3545;"></button>
-                                    <button class="theme-btn" data-theme="teal" style="background: #20c997;"></button>
-                                </div>
-                            </div>
-                            
-                            <div class="card">
-                                <h4><i class="fas fa-bell"></i> Notifications</h4>
-                                <div class="setting-item">
-                                    <span><i class="fas fa-newspaper"></i> New Posts</span>
-                                    <label class="toggle-switch"><input type="checkbox" id="notifPosts" ${userPreferences.notifications.posts ? 'checked' : ''}><span class="toggle-slider"></span></label>
-                                </div>
-                                <div class="setting-item">
-                                    <span><i class="fas fa-comment"></i> Comments</span>
-                                    <label class="toggle-switch"><input type="checkbox" id="notifComments" ${userPreferences.notifications.comments ? 'checked' : ''}><span class="toggle-slider"></span></label>
-                                </div>
-                            </div>
-                            
-                            <div class="card">
-                                <h4><i class="fas fa-shield-alt"></i> Privacy</h4>
-                                <div class="setting-item">
-                                    <span><i class="fas fa-location-dot"></i> Share Location</span>
-                                    <label class="toggle-switch"><input type="checkbox" id="shareLocation" ${userPreferences.privacy.shareLocation ? 'checked' : ''}><span class="toggle-slider"></span></label>
-                                </div>
-                                <div class="setting-item">
-                                    <span><i class="fas fa-chart-line"></i> Track Activity</span>
-                                    <label class="toggle-switch"><input type="checkbox" id="trackActivity" ${userPreferences.privacy.trackActivity ? 'checked' : ''}><span class="toggle-slider"></span></label>
-                                </div>
-                            </div>
-                            
-                            <div class="card">
-                                <h4><i class="fas fa-info-circle"></i> About</h4>
-                                <div class="about-section" style="text-align: center;">
-                                    <i class="fas fa-utensils"></i>
-                                    <h3>LAKO</h3>
-                                    <p>Street Food Discovery App</p>
-                                    <div class="version">Version 1.0.0</div>
-                                    <div class="about-text" style="text-align: left; margin-top: 15px;">
-                                        <p>Lako helps you discover the best street food vendors in your area. Find local favorites, read reviews, and share your food experiences!</p>
-                                        <br>
-                                        <p><strong>Capstone Project</strong><br>Asian Institute of Technology and Education</p>
-                                        <p><strong>Developers</strong><br>Kyle Brian M. Morillo & Alexander Collin Millicamp</p>
-                                        <p><strong>Location</strong><br>Quipot to Poblacion 1-4, Tiaong, Quezon</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <button id="logoutBtn" class="btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('app').innerHTML = mainHtml;
-            
-            // Render initial views
-            renderFeed();
-            renderShortlist();
-            
-            // Setup navigation
-            setupNavigation();
-            
-            // Setup map
-            initMap();
-            
-            // Setup search
-            setupSearch();
-            
-            // Setup theme selector
-            setupThemeSelector();
-            
-            // Setup settings
-            setupSettings();
-            
-            // Setup create post
-            document.getElementById('createPostBtn').onclick = showCreatePostModal;
-            
-            // Setup logout
-            document.getElementById('logoutBtn').onclick = async () => {
-                await logout();
-                showLanding();
-            };
-        }
-        
-        function renderFeed() {
-            const container = document.getElementById('feedList');
-            if (!posts || posts.length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-utensils"></i><p>No posts yet. Be the first to share!</p></div>';
-                return;
-            }
-            
-            container.innerHTML = posts.map(post => {
-                const score = (post.upvotes || 0) - (post.downvotes || 0);
-                const userVote = userVotes[post.id] || 0;
-                
-                return `
-                    <div class="feed-card" onclick="showPostDetail(${post.id})">
-                        <div class="vote-section">
-                            <button class="vote-up ${userVote === 1 ? 'voted' : ''}" data-id="${post.id}" onclick="event.stopPropagation(); handleVote(${post.id}, 1)"><i class="fas fa-arrow-up"></i></button>
-                            <span class="vote-score">${score}</span>
-                            <button class="vote-down ${userVote === -1 ? 'voted' : ''}" data-id="${post.id}" onclick="event.stopPropagation(); handleVote(${post.id}, -1)"><i class="fas fa-arrow-down"></i></button>
-                        </div>
-                        <div class="post-meta">
-                            <i class="fas fa-user-circle"></i> ${escapeHtml(post.author_name || 'Foodie')}
-                            <span>• ${formatDate(post.created_at)}</span>
-                            ${post.rating ? `<span class="post-badge"><i class="fas fa-star"></i> ${post.rating}/5</span>` : ''}
-                        </div>
-                        <h3>${escapeHtml(post.title)}</h3>
-                        <div class="post-content-text">${truncate(escapeHtml(post.content), 120)}</div>
-                        ${post.vendor_name ? `<div class="post-meta"><i class="fas fa-store"></i> ${escapeHtml(post.vendor_name)}</div>` : ''}
-                        <div class="post-actions">
-                            <button onclick="event.stopPropagation(); showComments(${post.id})"><i class="fas fa-comment"></i> ${post.comment_count || 0}</button>
-                            <button onclick="event.stopPropagation(); sharePost(${post.id})"><i class="fas fa-share"></i> Share</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        function renderShortlist() {
-            const container = document.getElementById('shortlistList');
-            if (!shortlist || shortlist.length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-heart-o"></i><p>No saved vendors yet. Tap the heart icon to save your favorites!</p></div>';
-                return;
-            }
-            
-            container.innerHTML = shortlist.map(vendor => `
-                <div class="vendor-card" onclick="showVendorDetail(${vendor.id})">
-                    <div class="vendor-icon"><i class="fas fa-store"></i></div>
-                    <div class="vendor-info">
-                        <h4>${escapeHtml(vendor.business_name)}</h4>
-                        <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(vendor.address || 'No address')}</p>
-                        <p><i class="fas fa-star"></i> ${vendor.rating || 0} (${vendor.review_count || 0} reviews)</p>
-                        <div style="display: flex; gap: 8px; margin-top: 8px;">
-                            <button onclick="event.stopPropagation(); navigateToVendor(${vendor.id})" class="btn-secondary" style="padding: 6px 12px; font-size: 0.7rem;">
-                                <i class="fas fa-directions"></i> Navigate
-                            </button>
-                            <button onclick="event.stopPropagation(); messageVendor(${vendor.id})" class="btn-secondary" style="padding: 6px 12px; font-size: 0.7rem;">
-                                <i class="fab fa-facebook-messenger"></i> Message
-                            </button>
-                            <button onclick="event.stopPropagation(); removeFromShortlist(${vendor.id})" class="btn-danger" style="padding: 6px 12px; font-size: 0.7rem; background: #dc3545; color: white;">
-                                <i class="fas fa-trash"></i> Remove
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        function initMap() {
-            const mapContainer = document.getElementById('map');
-            if (!mapContainer) return;
-            
-            if (map) {
-                map.remove();
-            }
-            
-            const center = currentLocation ? [currentLocation.lat, currentLocation.lng] : [13.9500, 121.3167];
-            map = L.map('map').setView(center, 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-            
-            // Add vendor markers
-            vendors.forEach(vendor => {
-                if (vendor.latitude && vendor.longitude) {
-                    const marker = L.marker([vendor.latitude, vendor.longitude])
-                        .bindPopup(`
-                            <b>${escapeHtml(vendor.business_name)}</b><br>
-                            ⭐ ${vendor.rating || 0} (${vendor.review_count || 0} reviews)<br>
-                            ${escapeHtml(vendor.address || '')}<br>
-                            <button onclick="navigateToVendor(${vendor.id})" style="margin-top: 5px; padding: 5px 10px; background: var(--primary); color: white; border: none; border-radius: 20px; cursor: pointer;">
-                                <i class="fas fa-directions"></i> Navigate
-                            </button>
-                            <button onclick="messageVendor(${vendor.id})" style="margin-top: 5px; padding: 5px 10px; background: #0084ff; color: white; border: none; border-radius: 20px; cursor: pointer;">
-                                <i class="fab fa-facebook-messenger"></i> Message
-                            </button>
-                        `);
-                    marker.addTo(map);
-                    mapMarkers.push(marker);
-                }
-            });
-            
-            // Add user location marker
-            if (currentLocation) {
-                L.marker([currentLocation.lat, currentLocation.lng], {
-                    icon: L.divIcon({
-                        className: 'user-marker',
-                        html: '<i class="fas fa-user-circle" style="font-size: 24px; color: var(--primary);"></i>',
-                        iconSize: [24, 24]
                     })
-                }).bindPopup('You are here').addTo(map);
+                }).bindPopup(`
+                    <div style="width: 200px;">
+                        <b style="font-size: 14px;">${escapeHtml(vendor.business_name)}</b><br>
+                        <div style="margin: 8px 0;">
+                            <i class="fas fa-star" style="color: #ffc107;"></i> ${vendor.rating || 'N/A'}/5
+                            <span style="font-size: 0.8rem; color: #666;">(${vendor.review_count || 0} reviews)</span>
+                        </div>
+                        <div style="margin: 8px 0; font-size: 0.85rem; color: #666;">
+                            <i class="fas fa-map-marker-alt"></i> ${escapeHtml(vendor.address || 'No address')}
+                        </div>
+                        <div style="display: flex; gap: 5px; margin-top: 10px;">
+                            <button onclick="navigateToVendor(${vendor.id})" style="flex: 1; padding: 5px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.8rem;"><i class="fas fa-directions"></i> Navigate</button>
+                            <button onclick="messageVendor(${vendor.id})" style="flex: 1; padding: 5px; background: #0084ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.8rem;"><i class="fab fa-facebook-messenger"></i> Chat</button>
+                        </div>
+                    </div>
+                `);
+                marker.addTo(map);
             }
-            
-            // Center button
-            document.getElementById('centerLocationBtn').onclick = () => {
-                if (currentLocation) {
-                    map.setView([currentLocation.lat, currentLocation.lng], 15);
-                } else if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition((pos) => {
-                        currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                        map.setView([currentLocation.lat, currentLocation.lng], 15);
-                    });
-                }
-            };
-            
-            // Refresh button
-            document.getElementById('refreshMapBtn').onclick = async () => {
-                await fetchVendors();
-                initMap();
-            };
+        });
+        
+        // Add user location marker
+        if (currentLocation) {
+            userMarker = L.marker([currentLocation.lat, currentLocation.lng], { 
+                icon: L.divIcon({ 
+                    html: '<i class="fas fa-user-circle" style="font-size: 32px; color: var(--primary); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));"></i>', 
+                    iconSize: [32, 32],
+                    className: 'user-location-marker'
+                }) 
+            }).addTo(map).bindPopup('📍 Your location');
+            map.setView([currentLocation.lat, currentLocation.lng], 14);
         }
         
-        function setupNavigation() {
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.onclick = () => {
-                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    document.querySelectorAll('.tab').forEach(tab => tab.classList.add('hidden'));
-                    document.getElementById(`${btn.dataset.tab}Tab`).classList.remove('hidden');
-                    
-                    if (btn.dataset.tab === 'map' && map) {
-                        setTimeout(() => map.invalidateSize(), 100);
-                    }
-                    if (btn.dataset.tab === 'shortlist') {
-                        renderShortlist();
-                    }
-                };
-            });
-        }
-        
-        function setupSearch() {
-            document.getElementById('searchBtn').onclick = performSearch;
-            document.getElementById('searchInput').onkeypress = (e) => {
-                if (e.key === 'Enter') performSearch();
-            };
-            
-            document.querySelectorAll('.search-tab-btn').forEach(btn => {
-                btn.onclick = () => {
-                    document.querySelectorAll('.search-tab-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    performSearch();
-                };
-            });
-        }
-        
-        async function performSearch() {
-            const query = document.getElementById('searchInput').value.trim();
-            if (!query) return;
-            
-            const searchType = document.querySelector('.search-tab-btn.active').dataset.type;
-            const resultsContainer = document.getElementById('searchResults');
-            
-            resultsContainer.innerHTML = '<div style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
-            
-            try {
-                let results;
-                if (searchType === 'vendors') {
-                    results = vendors.filter(v => 
-                        v.business_name.toLowerCase().includes(query.toLowerCase()) ||
-                        (v.category && v.category.toLowerCase().includes(query.toLowerCase())) ||
-                        (v.address && v.address.toLowerCase().includes(query.toLowerCase()))
-                    );
-                    
-                    resultsContainer.innerHTML = results.map(vendor => `
-                        <div class="vendor-card" onclick="showVendorDetail(${vendor.id})">
-                            <div class="vendor-icon"><i class="fas fa-store"></i></div>
-                            <div class="vendor-info">
-                                <h4>${escapeHtml(vendor.business_name)}</h4>
-                                <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(vendor.address || 'No address')}</p>
-                                <p><i class="fas fa-star"></i> ${vendor.rating || 0} (${vendor.review_count || 0} reviews)</p>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    results = posts.filter(p => 
-                        p.title.toLowerCase().includes(query.toLowerCase()) ||
-                        p.content.toLowerCase().includes(query.toLowerCase())
-                    );
-                    
-                    resultsContainer.innerHTML = results.map(post => `
-                        <div class="feed-card" onclick="showPostDetail(${post.id})">
-                            <h3>${escapeHtml(post.title)}</h3>
-                            <div class="post-content-text">${truncate(escapeHtml(post.content), 100)}</div>
-                            <div class="post-meta">${formatDate(post.created_at)}</div>
-                        </div>
-                    `).join('');
-                }
-                
-                if (results.length === 0) {
-                    resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>No results found</p></div>';
-                }
-            } catch (error) {
-                resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error searching</p></div>';
+        // Update controls
+        document.getElementById('centerLocationBtn')?.addEventListener('click', () => { 
+            if (currentLocation && map) {
+                map.setView([currentLocation.lat, currentLocation.lng], 16);
+                userMarker?.openPopup();
             }
-        }
+        });
         
-        function setupThemeSelector() {
-            document.querySelectorAll('.theme-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const theme = btn.dataset.theme;
-                    document.body.setAttribute('data-theme', theme);
-                    userPreferences.theme = theme;
-                    localStorage.setItem('theme', theme);
-                    
-                    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                };
-                
-                if (btn.dataset.theme === userPreferences.theme) {
-                    btn.classList.add('active');
-                }
-            });
-        }
-        
-        function setupSettings() {
-            document.getElementById('notifPosts').onchange = (e) => {
-                userPreferences.notifications.posts = e.target.checked;
-            };
-            document.getElementById('notifComments').onchange = (e) => {
-                userPreferences.notifications.comments = e.target.checked;
-            };
-            document.getElementById('shareLocation').onchange = (e) => {
-                userPreferences.privacy.shareLocation = e.target.checked;
-                if (e.target.checked && navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition((pos) => {
-                        currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                        if (map) map.setView([currentLocation.lat, currentLocation.lng], 14);
-                    });
-                }
-            };
-            document.getElementById('trackActivity').onchange = (e) => {
-                userPreferences.privacy.trackActivity = e.target.checked;
-            };
-        }
-        
-        function showCreatePostModal() {
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Share Your Food Experience</h3>
-                        <button class="close-modal" onclick="this.closest('.modal-overlay').remove()">✕</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="input-group">
-                            <i class="fas fa-store"></i>
-                            <select id="postVendor">
-                                <option value="">Select Vendor (Optional)</option>
-                                ${vendors.map(v => `<option value="${v.id}">${escapeHtml(v.business_name)}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <i class="fas fa-heading"></i>
-                            <input type="text" id="postTitle" placeholder="Title">
-                        </div>
-                        <div class="input-group">
-                            <i class="fas fa-star"></i>
-                            <select id="postRating">
-                                <option value="">No Rating</option>
-                                <option value="5">★★★★★ (5)</option>
-                                <option value="4">★★★★☆ (4)</option>
-                                <option value="3">★★★☆☆ (3)</option>
-                                <option value="2">★★☆☆☆ (2)</option>
-                                <option value="1">★☆☆☆☆ (1)</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <i class="fas fa-comment"></i>
-                            <textarea id="postContent" rows="5" placeholder="Share your review or question..."></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer" style="padding: 15px;">
-                        <button id="submitPost" class="btn-primary">Post</button>
-                    </div>
+        document.getElementById('refreshMapBtn')?.addEventListener('click', async () => { 
+            document.getElementById('refreshMapBtn').style.animation = 'spin 1s linear';
+            await fetchVendors(); 
+            initMap();
+            setTimeout(() => {
+                document.getElementById('refreshMapBtn').style.animation = 'none';
+            }, 1000);
+        });
+    }
+    
+    // ======================== MODAL FUNCTIONS ========================
+    window.showVendorDetail = async (vendorId) => {
+        const vendor = vendors.find(v => v.id === vendorId);
+        if (!vendor) return;
+        await logActivity('view', vendorId);
+        const isSaved = shortlist.some(s => s.id === vendorId);
+        const messenger = await getMessengerLink(vendorId);
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `<div class="modal-content">
+            <div class="modal-header"><h3>${escapeHtml(vendor.business_name)}</h3><button class="close-modal">✕</button></div>
+            <div class="modal-body">
+                <p><i class="fas fa-star"></i> Rating: ${vendor.rating || 0}/5 (${vendor.review_count || 0} reviews)</p>
+                <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(vendor.address || 'No address')}</p>
+                <p><i class="fas fa-tag"></i> ${vendor.category || 'Street Food'}</p>
+                ${vendor.hours ? `<p><i class="fas fa-clock"></i> Hours: ${escapeHtml(vendor.hours)}</p>` : ''}
+                ${vendor.price_range ? `<p><i class="fas fa-tag"></i> Price: ${escapeHtml(vendor.price_range)}</p>` : ''}
+                <p>${escapeHtml(vendor.description || 'No description available')}</p>
+                <div class="vendor-menu-row">
+                    <span class="menu-chip" onclick="navigateToVendor(${vendor.id})"><i class="fas fa-directions"></i> Navigate</span>
+                    <span class="menu-chip" onclick="messageVendor(${vendor.id})"><i class="fab fa-facebook-messenger"></i> Chat</span>
+                    <span class="menu-chip" id="saveVendorBtn"><i class="fas fa-${isSaved ? 'heart' : 'heart-o'}"></i> ${isSaved ? 'Saved' : 'Save'}</span>
                 </div>
-            `;
-            document.body.appendChild(modal);
-            
-            document.getElementById('submitPost').onclick = async () => {
-                const vendorId = document.getElementById('postVendor').value;
-                const title = document.getElementById('postTitle').value;
-                const rating = document.getElementById('postRating').value;
-                const content = document.getElementById('postContent').value;
-                
-                if (!title || !content) {
-                    alert('Please enter a title and content');
-                    return;
-                }
-                
-                try {
-                    await createPost({
-                        vendor_id: vendorId ? parseInt(vendorId) : null,
-                        title,
-                        content,
-                        rating: rating ? parseInt(rating) : null,
-                        post_type: 'review'
-                    });
-                    
-                    modal.remove();
-                    await fetchPosts();
-                    renderFeed();
-                } catch (error) {
-                    alert('Error creating post: ' + error.message);
-                }
-            };
-        }
-        
-        // Global functions for onclick handlers
-        window.showVendorDetail = async (vendorId) => {
-            const vendor = vendors.find(v => v.id === vendorId);
-            if (!vendor) return;
-            
-            await logActivity('view', vendorId);
-            
-            const isSaved = shortlist.some(s => s.id === vendorId);
-            const messengerData = await getMessengerLink(vendorId);
-            
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>${escapeHtml(vendor.business_name)}</h3>
-                        <button class="close-modal" onclick="this.closest('.modal-overlay').remove()">✕</button>
-                    </div>
-                    <div class="modal-body">
-                        <p><i class="fas fa-star" style="color: #ffc107;"></i> Rating: ${vendor.rating || 0}/5 (${vendor.review_count || 0} reviews)</p>
-                        <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(vendor.address || 'No address')}</p>
-                        <p><i class="fas fa-tag"></i> ${vendor.category || 'Street Food'}</p>
-                        ${vendor.hours ? `<p><i class="fas fa-clock"></i> Hours: ${escapeHtml(vendor.hours)}</p>` : ''}
-                        ${vendor.price_range ? `<p><i class="fas fa-tag"></i> Price: ${escapeHtml(vendor.price_range)}</p>` : ''}
-                        <p>${escapeHtml(vendor.description || 'No description available')}</p>
-                        <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
-                            <button onclick="navigateToVendor(${vendor.id})" class="btn-primary" style="flex: 1;">
-                                <i class="fas fa-directions"></i> Navigate
-                            </button>
-                            <button onclick="messageVendor(${vendor.id})" class="btn-secondary" style="flex: 1;">
-                                <i class="fab fa-facebook-messenger"></i> Message
-                            </button>
-                            <button onclick="toggleShortlist(${vendor.id})" class="btn-secondary" style="flex: 1;">
-                                <i class="fas fa-${isSaved ? 'heart' : 'heart-o'}"></i> ${isSaved ? 'Saved' : 'Save'}
-                            </button>
-                        </div>
-                        <div style="margin-top: 15px;">
-                            <h4>Recent Reviews</h4>
-                            <div id="vendorReviews"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            
-            // Load vendor reviews
-            const vendorPosts = posts.filter(p => p.vendor_id === vendorId);
-            const reviewsDiv = document.getElementById('vendorReviews');
-            if (vendorPosts.length > 0) {
-                reviewsDiv.innerHTML = vendorPosts.slice(0, 3).map(p => `
-                    <div style="padding: 10px; margin: 10px 0; background: rgba(0,0,0,0.05); border-radius: 15px;">
-                        <strong>${escapeHtml(p.title)}</strong>
-                        <div>${truncate(escapeHtml(p.content), 80)}</div>
-                        ${p.rating ? `<div><i class="fas fa-star" style="color: #ffc107;"></i> ${p.rating}/5</div>` : ''}
-                        <div class="post-meta">${formatDate(p.created_at)}</div>
-                    </div>
-                `).join('');
-            } else {
-                reviewsDiv.innerHTML = '<p>No reviews yet. Be the first to review!</p>';
-            }
-        };
-        
-        window.toggleShortlist = async (vendorId) => {
-            const isSaved = shortlist.some(s => s.id === vendorId);
-            if (isSaved) {
-                await removeFromShortlist(vendorId);
-            } else {
-                await addToShortlist(vendorId);
-            }
-            renderShortlist();
-            // Close modal and reopen to refresh button
-            document.querySelector('.modal-overlay')?.remove();
+                <h4 style="margin-top: 16px;">📋 Menu Highlights</h4>
+                <div id="vendorMenuPreview" class="vendor-menu-row"></div>
+                <h4>🍽️ Recent Reviews</h4>
+                <div id="vendorReviewsPreview"></div>
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.querySelector('.close-modal').onclick = () => modal.remove();
+        document.getElementById('saveVendorBtn').onclick = async () => {
+            if (isSaved) await removeFromShortlist(vendorId);
+            else await addToShortlist(vendorId);
+            modal.remove();
             showVendorDetail(vendorId);
         };
+        const menuDiv = document.getElementById('vendorMenuPreview');
+        menuDiv.innerHTML = `<span class="menu-chip"><i class="fas fa-utensils"></i> ${vendor.category || 'Street Food'}</span>
+            <span class="menu-chip"><i class="fas fa-clock"></i> ${vendor.hours || '4pm - 10pm'}</span>
+            <span class="menu-chip"><i class="fas fa-tag"></i> ${vendor.price_range || '₱20-₱150'}</span>`;
+        const reviewsDiv = document.getElementById('vendorReviewsPreview');
+        const vendorPosts = posts.filter(p => p.vendor_id === vendorId);
+        reviewsDiv.innerHTML = vendorPosts.length ? vendorPosts.slice(0, 3).map(p => `<div style="padding: 10px; margin: 10px 0; background: var(--primary-soft); border-radius: 16px;"><strong>${escapeHtml(p.title)}</strong><div>${truncate(escapeHtml(p.content), 80)}</div>${p.rating ? `<div><i class="fas fa-star" style="color: #ffc107;"></i> ${p.rating}/5</div>` : ''}<div class="post-meta">${formatDate(p.created_at)}</div></div>`).join('') : '<p class="text-muted">No reviews yet. Be the first to review!</p>';
+    };
+    
+    window.showPostDetail = async (postId) => {
+        try {
+            const post = await apiRequest(`/posts/${postId}`);
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `<div class="modal-content">
+                <div class="modal-header"><h3>${escapeHtml(post.title)}</h3><button class="close-modal">✕</button></div>
+                <div class="modal-body">
+                    <div class="post-meta"><i class="fas fa-user-circle"></i> ${escapeHtml(post.author_name || 'Foodie')}<span>${formatDate(post.created_at)}</span>${post.rating ? `<span class="post-badge"><i class="fas fa-star"></i> ${post.rating}/5</span>` : ''}</div>
+                    <p style="margin: 15px 0;">${escapeHtml(post.content)}</p>
+                    ${post.image_url ? `<img src="${post.image_url}" style="max-width: 100%; border-radius: 20px; margin: 12px 0;">` : ''}
+                    <div id="commentList"></div>
+                    <div class="input-group" style="margin-top: 15px;"><i class="fas fa-comment"></i><textarea id="newCommentText" rows="3" placeholder="Share your thoughts..."></textarea></div>
+                    <button id="submitCommentBtn" class="btn-primary" style="margin-top: 10px;">Post Comment</button>
+                </div>
+            </div>`;
+            document.body.appendChild(modal);
+            modal.querySelector('.close-modal').onclick = () => modal.remove();
+            const commentList = document.getElementById('commentList');
+            if (post.comments && post.comments.length) {
+                commentList.innerHTML = post.comments.map(c => `<div style="padding: 12px; margin: 10px 0; background: var(--primary-soft); border-radius: 20px;"><strong><i class="fas fa-user-circle"></i> ${escapeHtml(c.author_name || 'Foodie')}</strong><div style="margin-top: 5px;">${escapeHtml(c.content)}</div><div class="post-meta">${formatDate(c.created_at)}</div></div>`).join('');
+            } else { commentList.innerHTML = '<p class="text-muted" style="text-align: center;">No comments yet. Be the first!</p>'; }
+            document.getElementById('submitCommentBtn').onclick = async () => {
+                const content = document.getElementById('newCommentText').value;
+                if (!content.trim()) return;
+                await addComment(postId, content);
+                modal.remove();
+                showPostDetail(postId);
+            };
+        } catch (error) { alert('Error loading post'); }
+    };
+    
+    window.handleVote = async (postId, voteType) => { await vote(postId, voteType); renderFeed(); };
+    window.navigateToVendor = (vendorId) => {
+        const vendor = vendors.find(v => v.id === vendorId);
+        if (!vendor || !vendor.latitude || !vendor.longitude) {
+            alert('Vendor location not available');
+            return;
+        }
         
-        window.removeFromShortlist = async (vendorId) => {
-            await removeFromShortlist(vendorId);
-            renderShortlist();
-        };
+        let url;
+        const mapsApp = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         
-        window.navigateToVendor = (vendorId) => {
-            const vendor = vendors.find(v => v.id === vendorId);
-            if (vendor && vendor.latitude && vendor.longitude && currentLocation) {
-                const url = `https://www.google.com/maps/dir/?api=1&origin=${currentLocation.lat},${currentLocation.lng}&destination=${vendor.latitude},${vendor.longitude}`;
-                window.open(url, '_blank');
-                logActivity('navigate', vendorId);
-            } else if (vendor && vendor.latitude && vendor.longitude) {
-                const url = `https://www.google.com/maps/search/?api=1&query=${vendor.latitude},${vendor.longitude}`;
-                window.open(url, '_blank');
-            } else {
-                alert('Vendor location not available');
-            }
-        };
-        
-        window.messageVendor = async (vendorId) => {
-            const vendor = vendors.find(v => v.id === vendorId);
-            if (vendor) {
-                const messengerData = await getMessengerLink(vendorId);
-                window.open(messengerData.messenger_url, '_blank');
-                await logActivity('chat', vendorId);
-            }
-        };
-        
-        window.showPostDetail = async (postId) => {
-            try {
-                const post = await apiRequest(`/posts/${postId}`);
-                
-                const modal = document.createElement('div');
-                modal.className = 'modal-overlay';
-                modal.innerHTML = `
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>${escapeHtml(post.title)}</h3>
-                            <button class="close-modal" onclick="this.closest('.modal-overlay').remove()">✕</button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="post-meta">
-                                <i class="fas fa-user-circle"></i> ${escapeHtml(post.author_name || 'Foodie')}
-                                <span>${formatDate(post.created_at)}</span>
-                            </div>
-                            <p style="margin: 15px 0;">${escapeHtml(post.content)}</p>
-                            ${post.rating ? `<div><i class="fas fa-star" style="color: #ffc107;"></i> Rating: ${post.rating}/5</div>` : ''}
-                            <div id="postCommentsList"></div>
-                            <div class="input-group" style="margin-top: 15px;">
-                                <i class="fas fa-comment"></i>
-                                <textarea id="newComment" rows="3" placeholder="Share your thoughts..."></textarea>
-                            </div>
-                            <button id="submitCommentBtn" class="btn-primary" style="margin-top: 10px;">Post Comment</button>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-                
-                // Load comments
-                const commentsList = document.getElementById('postCommentsList');
-                if (post.comments && post.comments.length > 0) {
-                    commentsList.innerHTML = post.comments.map(c => `
-                        <div style="padding: 12px; margin: 10px 0; background: rgba(0,0,0,0.05); border-radius: 15px;">
-                            <strong><i class="fas fa-user-circle"></i> ${escapeHtml(c.author_name || 'Foodie')}</strong>
-                            <div style="margin-top: 5px;">${escapeHtml(c.content)}</div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 5px;">${formatDate(c.created_at)}</div>
-                        </div>
-                    `).join('');
-                } else {
-                    commentsList.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No comments yet. Be the first!</p>';
+        if (currentLocation) {
+            const origin = `${currentLocation.lat},${currentLocation.lng}`;
+            const destination = `${vendor.latitude},${vendor.longitude}`;
+            
+            if (mapsApp) {
+                // Try native maps on mobile
+                if (/Android/i.test(navigator.userAgent)) {
+                    url = `google.navigation:q=${destination}`;
+                } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                    url = `maps://maps.apple.com/?daddr=${destination}&dirflg=d`;
                 }
-                
-                document.getElementById('submitCommentBtn').onclick = async () => {
-                    const content = document.getElementById('newComment').value;
-                    if (!content.trim()) return;
-                    
-                    await addComment(postId, content);
-                    modal.remove();
-                    showPostDetail(postId);
-                };
-            } catch (error) {
-                alert('Error loading post');
+                window.location.href = url;
+            } else {
+                // Web-based Google Maps
+                url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=walking`;
+                window.open(url, '_blank');
             }
-        };
+        } else {
+            // Just show the location
+            url = `https://www.google.com/maps/search/?api=1&query=${vendor.latitude},${vendor.longitude}`;
+            window.open(url, '_blank');
+        }
         
-        window.showComments = (postId) => {
-            showPostDetail(postId);
-        };
-        
-        window.handleVote = async (postId, voteType) => {
-            await vote(postId, voteType);
+        logActivity('navigate', vendorId);
+    };
+    window.messageVendor = async (vendorId) => {
+        const vendor = vendors.find(v => v.id === vendorId);
+        if (vendor) { const messenger = await getMessengerLink(vendorId); window.open(messenger.messenger_url, '_blank'); logActivity('chat', vendorId); }
+    };
+    window.removeFromShortlistUI = async (vendorId) => { await removeFromShortlist(vendorId); renderShortlist(); };
+    window.toggleShortlistQuick = async (vendorId) => { await addToShortlist(vendorId); renderNearbyList(); renderShortlist(); };
+    window.sharePost = (postId) => { if (navigator.share) navigator.share({ title: 'Lako Food Discovery', text: 'Check out this food review on Lako!' }); else { prompt('Share this post:', window.location.href); } };
+    
+    function showCreatePostModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `<div class="modal-content">
+            <div class="modal-header"><h3>Share Your Food Experience</h3><button class="close-modal">✕</button></div>
+            <div class="modal-body">
+                <div class="input-group"><i class="fas fa-store"></i><select id="postVendor"><option value="">Select Vendor (Optional)</option>${vendors.map(v => `<option value="${v.id}">${escapeHtml(v.business_name)}</option>`).join('')}</select></div>
+                <div class="input-group"><i class="fas fa-heading"></i><input type="text" id="postTitle" placeholder="Title"></div>
+                <div class="input-group"><i class="fas fa-star"></i><select id="postRating"><option value="">No Rating</option><option value="5">★★★★★ (5)</option><option value="4">★★★★☆ (4)</option><option value="3">★★★☆☆ (3)</option><option value="2">★★☆☆☆ (2)</option><option value="1">★☆☆☆☆ (1)</option></select></div>
+                <div class="input-group"><i class="fas fa-image"></i><input type="text" id="postImage" placeholder="Image URL (optional)"></div>
+                <div class="input-group"><i class="fas fa-comment"></i><textarea id="postContent" rows="5" placeholder="Share your review or question..."></textarea></div>
+            </div>
+            <div class="modal-footer" style="padding: 15px;"><button id="submitPostBtn" class="btn-primary">Post</button></div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.querySelector('.close-modal').onclick = () => modal.remove();
+        document.getElementById('submitPostBtn').onclick = async () => {
+            const vendorId = document.getElementById('postVendor').value;
+            const title = document.getElementById('postTitle').value;
+            const rating = document.getElementById('postRating').value;
+            const image = document.getElementById('postImage').value;
+            const content = document.getElementById('postContent').value;
+            if (!title || !content) { alert('Please enter a title and content'); return; }
+            await createPost({ vendor_id: vendorId ? parseInt(vendorId) : null, title, content, rating: rating ? parseInt(rating) : null, image_url: image || null, post_type: 'review' });
+            modal.remove();
             await fetchPosts();
             renderFeed();
         };
-        
-        window.sharePost = (postId) => {
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Lako Food Discovery',
-                    text: 'Check out this food review on Lako!'
-                });
-            } else {
-                prompt('Share this post:', window.location.href);
-            }
+    }
+    
+    function performSearch() {
+        const query = document.getElementById('searchInput')?.value.trim();
+        if (!query) return;
+        const searchType = document.querySelector('.search-tab-btn.active')?.dataset.type || 'vendors';
+        const resultsContainer = document.getElementById('searchResults');
+        if (searchType === 'vendors') {
+            const results = vendors.filter(v => v.business_name.toLowerCase().includes(query.toLowerCase()) || (v.category && v.category.toLowerCase().includes(query.toLowerCase())));
+            resultsContainer.innerHTML = results.map(v => `<div class="vendor-card" onclick="showVendorDetail(${v.id})"><div class="vendor-icon"><i class="fas fa-store"></i></div><div class="vendor-info"><h4>${escapeHtml(v.business_name)}</h4><p>${escapeHtml(v.address || '')} ⭐ ${v.rating || 0}</p><div class="vendor-menu-row"><span class="menu-chip" onclick="event.stopPropagation(); navigateToVendor(${v.id})"><i class="fas fa-directions"></i> Navigate</span><span class="menu-chip" onclick="event.stopPropagation(); messageVendor(${v.id})"><i class="fab fa-facebook-messenger"></i> Chat</span></div></div></div>`).join('');
+            if (!results.length) resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>No vendors found</p></div>';
+        } else {
+            const results = posts.filter(p => p.title.toLowerCase().includes(query.toLowerCase()) || p.content.toLowerCase().includes(query.toLowerCase()));
+            resultsContainer.innerHTML = results.map(p => `<div class="feed-card" onclick="showPostDetail(${p.id})"><h3>${escapeHtml(p.title)}</h3><div>${truncate(escapeHtml(p.content), 100)}</div><div class="post-meta">${formatDate(p.created_at)}</div></div>`).join('');
+            if (!results.length) resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>No posts found</p></div>';
+        }
+    }
+    
+    function setupSearch() {
+        document.getElementById('searchExec')?.addEventListener('click', performSearch);
+        document.getElementById('searchInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') performSearch(); });
+        document.querySelectorAll('.search-tab-btn').forEach(btn => { btn.onclick = () => { document.querySelectorAll('.search-tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); performSearch(); }; });
+    }
+    
+    function setupTheme() {
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.onclick = () => { const t = btn.dataset.theme; document.body.setAttribute('data-theme', t); userPreferences.theme = t; localStorage.setItem('theme', t); document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); };
+            if (btn.dataset.theme === userPreferences.theme) btn.classList.add('active');
+        });
+    }
+    
+    // ======================== APP NAVIGATION ========================
+    async function showSplash() {
+        document.getElementById('app').innerHTML = `<div id="splash" class="screen"><div class="splash-content"><i class="fas fa-utensils"></i><h1>LAKO</h1><p>street food · nearby · local</p><div class="loader"></div></div></div>`;
+        const userId = localStorage.getItem('userId');
+        if (userId && await loadUser(userId)) { await Promise.all([fetchVendors(), fetchPosts(), fetchShortlist(), fetchUserVotes()]); setTimeout(() => showMainApp(), 500); } else { setTimeout(() => showLanding(), 1800); }
+    }
+    
+    function showLanding() {
+        document.getElementById('app').innerHTML = `<div class="screen"><div class="container" style="padding-top: 20%;"><div class="card" style="text-align: center;"><i class="fas fa-utensils" style="font-size: 4rem; color: var(--primary); margin-bottom: 15px;"></i><h1 style="color: var(--primary); margin-bottom: 10px;">LAKO</h1><p style="color: var(--text-muted); margin-bottom: 30px;">Discover street food vendors near you</p><button id="loginBtn" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login with Gmail</button><button id="registerBtn" class="btn-secondary" style="margin-top: 12px;"><i class="fas fa-user-plus"></i> Create Account</button></div></div></div>`;
+        document.getElementById('loginBtn').onclick = showLogin;
+        document.getElementById('registerBtn').onclick = showRegister;
+    }
+    
+    function showLogin() {
+        document.getElementById('app').innerHTML = `<div class="screen"><div class="container" style="padding-top: 15%;"><div class="card"><h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Welcome Back</h2><div class="input-group"><i class="fas fa-envelope"></i><input type="email" id="loginEmail" placeholder="your@gmail.com"></div><div class="input-group"><i class="fas fa-lock"></i><input type="password" id="loginPassword" placeholder="Password"></div><div id="loginMsg" style="color: #dc3545; font-size: 0.85rem; margin-bottom: 10px;"></div><button id="doLoginBtn" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button><button id="backLanding" class="btn-secondary" style="margin-top: 12px;"><i class="fas fa-arrow-left"></i> Back</button></div></div></div>`;
+        document.getElementById('doLoginBtn').onclick = async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            if (!email.endsWith('@gmail.com')) { document.getElementById('loginMsg').innerHTML = 'Only Gmail addresses are allowed'; return; }
+            const success = await login(email, password);
+            if (success) { await Promise.all([fetchVendors(), fetchPosts(), fetchShortlist(), fetchUserVotes()]); showMainApp(); } 
+            else { document.getElementById('loginMsg').innerHTML = 'Invalid credentials'; }
         };
+        document.getElementById('backLanding').onclick = showLanding;
+    }
+    
+    function showRegister() {
+        document.getElementById('app').innerHTML = `<div class="screen"><div class="container" style="padding-top: 10%;"><div class="card"><h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Create Account</h2><div class="input-group"><i class="fas fa-user"></i><input type="text" id="regName" placeholder="Full Name"></div><div class="input-group"><i class="fas fa-envelope"></i><input type="email" id="regEmail" placeholder="your@gmail.com"></div><div class="input-group"><i class="fas fa-phone"></i><input type="tel" id="regPhone" placeholder="Phone Number"></div><div class="input-group"><i class="fas fa-lock"></i><input type="password" id="regPass" placeholder="Password"></div><div id="regMsg" style="color: #dc3545; font-size: 0.85rem; margin-bottom: 10px;"></div><button id="doRegisterBtn" class="btn-primary"><i class="fas fa-check-circle"></i> Sign Up</button><button id="backLoginReg" class="btn-secondary" style="margin-top: 12px;"><i class="fas fa-arrow-left"></i> Back to Login</button></div></div></div>`;
+        document.getElementById('doRegisterBtn').onclick = async () => {
+            const fullName = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const phone = document.getElementById('regPhone').value;
+            const password = document.getElementById('regPass').value;
+            if (!fullName || !email || !password) { document.getElementById('regMsg').innerHTML = 'Please fill all required fields'; return; }
+            if (!email.endsWith('@gmail.com')) { document.getElementById('regMsg').innerHTML = 'Only Gmail addresses are allowed'; return; }
+            const success = await register(fullName, email, phone, password);
+            if (success) { alert('Registration successful! Please login.'); showLogin(); } 
+            else { document.getElementById('regMsg').innerHTML = 'Registration failed'; }
+        };
+        document.getElementById('backLoginReg').onclick = showLogin;
+    }
+    
+    async function showMainApp() {
+        if (!currentUser) return;
         
-        // Start the app
-        showSplash();
-    </script>
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    console.log('Notifications enabled');
+                }
+            });
+        }
+        
+        // Request geolocation permission
+        if (navigator.geolocation && userPreferences.notifications.nearbyVendors) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => console.log('Location access granted'),
+                (err) => console.log('Location permission: Please enable for geofence alerts'),
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+        }
+        
+        startLocationTracking();
+        const mainHtml = `<div class="screen">
+            <div class="bottom-nav">
+                <button data-tab="feed" class="nav-btn active"><i class="fas fa-newspaper"></i><span>Feed</span></button>
+                <button data-tab="map" class="nav-btn"><i class="fas fa-map-marked-alt"></i><span>Map</span></button>
+                <button data-tab="nearby" class="nav-btn"><i class="fas fa-location-dot"></i><span>Nearby</span></button>
+                <button data-tab="search" class="nav-btn"><i class="fas fa-search"></i><span>Search</span></button>
+                <button data-tab="profile" class="nav-btn"><i class="fas fa-user"></i><span>Profile</span></button>
+            </div>
+            <div id="feedTab" class="tab active"><div class="container"><div style="display:flex; justify-content:space-between; margin-bottom:16px"><h3><i class="fas fa-fire"></i> Foodie Feed</h3><button id="createPostBtn" style="background:var(--primary);color:white;border:none;padding:8px 16px;border-radius:40px;font-weight:600;cursor:pointer"><i class="fas fa-plus"></i> Share</button></div><div id="feedList"></div></div></div>
+            <div id="mapTab" class="tab hidden"><div id="map" class="map-container"></div><div class="map-controls"><button id="centerLocationBtn" class="control-btn"><i class="fas fa-location-dot"></i></button><button id="refreshMapBtn" class="control-btn"><i class="fas fa-sync-alt"></i></button></div></div>
+            <div id="nearbyTab" class="tab hidden"><div class="container"><h3><i class="fas fa-map-pin"></i> Vendors Within ${userPreferences.radius}km</h3><div id="nearbyVendorsList" class="vendor-menu-row" style="margin:12px 0; flex-wrap:wrap"></div><div id="nearbyFullList"></div></div></div>
+            <div id="searchTab" class="tab hidden"><div class="container"><div class="search-bar"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search vendors or posts..."><button id="searchExec" class="icon-btn"><i class="fas fa-arrow-right"></i></button></div><div class="search-tabs"><button class="search-tab-btn active" data-type="vendors"><i class="fas fa-store"></i> Vendors</button><button class="search-tab-btn" data-type="posts"><i class="fas fa-newspaper"></i> Posts</button></div><div id="searchResults"></div></div></div>
+            <div id="profileTab" class="tab hidden"><div class="container"><div class="card" style="text-align:center"><i class="fas fa-user-circle" style="font-size:4rem;color:var(--primary)"></i><h3>${escapeHtml(currentUser.full_name)}</h3><p>${escapeHtml(currentUser.email)}</p></div>
+            <div class="card"><h4>🎨 Theme</h4><div class="theme-colors"><button class="theme-btn" data-theme="green" style="background:#28a745"></button><button class="theme-btn" data-theme="blue" style="background:#0d6efd"></button><button class="theme-btn" data-theme="purple" style="background:#6f42c1"></button><button class="theme-btn" data-theme="orange" style="background:#fd7e14"></button><button class="theme-btn" data-theme="teal" style="background:#20c997"></button></div></div>
+            <div class="card"><h4><i class="fas fa-sliders-h"></i> Discovery Radius (km)</h4><input type="range" id="radiusSlider" min="0.5" max="2" step="0.1" value="${userPreferences.radius}" style="width:100%"><span id="radiusValue">${userPreferences.radius} km</span><p class="text-muted" style="font-size:0.7rem; margin-top:4px">Vendors within this radius appear in Nearby tab</p></div>
+            <div class="card"><h4><i class="fas fa-utensils"></i> Food Categories</h4><div id="categoriesFilter" class="vendor-menu-row"></div></div>
+            <div class="card"><h4><i class="fas fa-bell"></i> Notifications</h4><div class="setting-item"><span><i class="fas fa-location-dot"></i> Nearby vendor alerts (100m)</span><label class="toggle-switch"><input type="checkbox" id="nearbyNotif" ${userPreferences.notifications.nearbyVendors ? 'checked' : ''}><span class="toggle-slider"></span></label></div></div>
+            <div class="card"><h4><i class="fas fa-map-o"></i> Location Services</h4><div class="setting-item"><span><i class="fas fa-crosshairs"></i> Real-time Location Tracking</span><label class="toggle-switch"><input type="checkbox" id="locationTrackingToggle" checked><span class="toggle-slider"></span></label></div><p class="text-muted" style="font-size:0.75rem; margin-top:8px"><i class="fas fa-info-circle"></i> Keep enabled for geofence alerts and nearby vendor discovery</p></div>
+            <div class="card"><h4><i class="fas fa-info-circle"></i> About Lako</h4><p>Version 2.1 · Capstone Project · AITE · Tiaong, Quezon</p><p>Geofencing: Alerts when within 100m of a vendor</p><p>Real-time Navigation: Google Maps Integration</p><p>Developers: Kyle Morillo & Alexander Millicamp</p></div>
+            <button id="logoutBtn" class="btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button></div></div></div>`;
+        document.getElementById('app').innerHTML = mainHtml;
+        renderFeed(); renderShortlist(); initMap(); renderNearbyList();
+        document.querySelectorAll('.nav-btn').forEach(btn => { 
+            btn.onclick = () => { 
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); 
+                btn.classList.add('active'); 
+                document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden')); 
+                document.getElementById(`${btn.dataset.tab}Tab`).classList.remove('hidden'); 
+                if (btn.dataset.tab === 'map') {
+                    setTimeout(() => map?.invalidateSize(), 100);
+                }
+                if (btn.dataset.tab === 'profile') {
+                    renderShortlist(); 
+                }
+                if (btn.dataset.tab === 'nearby') {
+                    renderNearbyList();
+                }
+                if (btn.dataset.tab === 'search') {
+                    document.getElementById('searchInput')?.focus();
+                }
+            }; 
+        });
+        document.getElementById('createPostBtn').onclick = showCreatePostModal;
+        document.getElementById('logoutBtn').onclick = async () => { await logout(); showLanding(); };
+        document.getElementById('centerLocationBtn')?.addEventListener('click', () => { if (currentLocation && map) map.setView([currentLocation.lat, currentLocation.lng], 15); });
+        document.getElementById('radiusSlider')?.addEventListener('input', (e) => { userPreferences.radius = parseFloat(e.target.value); document.getElementById('radiusValue').innerText = userPreferences.radius + ' km'; renderNearbyList(); });
+        document.getElementById('nearbyNotif')?.addEventListener('change', (e) => { userPreferences.notifications.nearbyVendors = e.target.checked; if (e.target.checked && Notification.permission !== 'granted') Notification.requestPermission(); });
+        document.getElementById('locationTrackingToggle')?.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                startLocationTracking();
+            } else {
+                if (watchId) navigator.geolocation.clearWatch(watchId);
+                console.log('Location tracking disabled');
+            }
+        });
+        const categoriesDiv = document.getElementById('categoriesFilter');
+        if (categoriesDiv) {
+            categoriesDiv.innerHTML = userPreferences.categories.map(cat => `<span class="menu-chip" data-cat="${cat}" style="${userPreferences.selectedCategories.includes(cat) ? 'background:var(--primary); color:white' : ''}" onclick="toggleCategory('${cat}')">${cat}</span>`).join('');
+        }
+        setupSearch(); setupTheme();
+    }
+    
+    window.toggleCategory = (cat) => {
+        if (userPreferences.selectedCategories.includes(cat)) userPreferences.selectedCategories = userPreferences.selectedCategories.filter(c => c !== cat);
+        else userPreferences.selectedCategories.push(cat);
+        const categoriesDiv = document.getElementById('categoriesFilter');
+        if (categoriesDiv) categoriesDiv.innerHTML = userPreferences.categories.map(c => `<span class="menu-chip" data-cat="${c}" style="${userPreferences.selectedCategories.includes(c) ? 'background:var(--primary); color:white' : ''}" onclick="toggleCategory('${c}')">${c}</span>`).join('');
+        renderNearbyList();
+    };
+    
+    showSplash();
+</script>
 </body>
 </html>

@@ -275,8 +275,8 @@ def create_vendor():
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT INTO vendors (business_name, address, latitude, longitude, category, description, logo, messenger_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO vendors (business_name, address, latitude, longitude, category, description, logo_thumbnail)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (
             data.get('business_name'),
             data.get('address'),
@@ -284,8 +284,7 @@ def create_vendor():
             data.get('longitude'),
             data.get('category'),
             data.get('description'),
-            data.get('logo'),
-            data.get('messenger_id')
+            data.get('logo_thumbnail')
         ))
         
         vendor_id = cursor.lastrowid
@@ -404,7 +403,7 @@ def create_post():
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT INTO posts (user_id, vendor_id, title, content, post_type, rating, image)
+            INSERT INTO posts (user_id, vendor_id, title, content, post_type, rating, image_thumbnail)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (
             data['user_id'],
@@ -413,7 +412,7 @@ def create_post():
             data['content'],
             data.get('post_type', 'text'),
             data.get('rating'),
-            data.get('image')
+            data.get('image_url') or data.get('image')
         ))
         
         post_id = cursor.lastrowid
