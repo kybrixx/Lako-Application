@@ -1,5 +1,4 @@
-// ============= LAKO CUSTOMER APP =============
-// Developers: Kyle Brian M. Morillo & Alexander Collin Millicamp
+// Developed by: Kyle Brian M. Morillo & Alexander Collin Millicamp
 // Headquarters: 196 Bula, Tiaong, Quezon
 
 class LakoCustomerApp {
@@ -62,7 +61,7 @@ class LakoCustomerApp {
                 <div style="background: #e67e22; padding: 20px; text-align: center; color: white;">
                     <h2>LAKO - End User License Agreement</h2>
                     <p>196 Bula, Tiaong, Quezon</p>
-                    <p>Kyle Brian M. Morillo & Alexander Collin Millicamp</p>
+
                     <p>Asian Institute of Technology and Education</p>
                 </div>
                 <div style="padding: 20px; overflow-y: auto; max-height: 50vh; color: #ccc; font-size: 12px; line-height: 1.5;">

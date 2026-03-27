@@ -4,1012 +4,743 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#FF6B35">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Lako">
+    <link rel="manifest" href="/manifest.json">
     <title>Lako · Street Food Discovery & Navigation</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            background: #0f172a;
-            overflow: hidden;
-        }
-        
-        :root { 
-            --primary: #FF6B35;
-            --primary-gradient: linear-gradient(135deg, #FF6B35, #FF8A5C);
-            --primary-soft: rgba(255, 107, 53, 0.15);
-            --bg-dark: #0f172a;
-            --bg-surface: #1e293b;
-            --bg-card: #334155;
-            --text-primary: #ffffff;
-            --text-secondary: #94a3b8;
-            --border-light: rgba(255,255,255,0.1);
-        }
-        
-        [data-theme="green"] { --primary: #10b981; --primary-gradient: linear-gradient(135deg, #10b981, #34d399); }
-        [data-theme="blue"] { --primary: #3b82f6; --primary-gradient: linear-gradient(135deg, #3b82f6, #60a5fa); }
-        [data-theme="purple"] { --primary: #8b5cf6; --primary-gradient: linear-gradient(135deg, #8b5cf6, #a78bfa); }
-        [data-theme="orange"] { --primary: #f97316; --primary-gradient: linear-gradient(135deg, #f97316, #fb923c); }
-        [data-theme="pink"] { --primary: #ec489a; --primary-gradient: linear-gradient(135deg, #ec489a, #f472b6); }
-        
-        #app { width: 100%; height: 100%; position: relative; }
-        
-        /* Main Screen */
-        .main-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-dark);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        
-        /* Tab Content Area - Scrollable */
-        .tab-content-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 16px 90px 16px;
-        }
-        
-        /* Map Tab - Fixed height container */
-        .map-container {
-            width: 100%;
-            height: calc(100vh - 100px);
-            border-radius: 24px;
-            overflow: hidden;
-            position: relative;
-            margin-top: 0;
-        }
-        #map {
-            width: 100%;
-            height: 100%;
-            background: #1a2a3a;
-        }
-        
-        .map-controls {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 400;
-        }
-        .control-btn {
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            width: 44px;
-            height: 44px;
-            border-radius: 44px;
-            font-size: 1.1rem;
-            color: var(--primary);
-            cursor: pointer;
-        }
-        .location-badge {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            z-index: 400;
-            text-align: center;
-            color: white;
-            pointer-events: none;
-        }
-        
-        /* Bottom Navigation */
-        .bottom-nav { 
-            background: rgba(30, 41, 59, 0.95);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid var(--border-light);
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 16px 12px;
-            z-index: 100;
-            flex-shrink: 0;
-        }
-        
-        .nav-btn { 
-            background: none; 
-            border: none; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 4px; 
-            font-size: 0.7rem; 
-            color: var(--text-secondary); 
-            cursor: pointer; 
-            padding: 6px 12px; 
-            border-radius: 40px; 
-            transition: all 0.2s; 
-        }
-        .nav-btn i { font-size: 1.3rem; }
-        .nav-btn.active { color: var(--primary); background: var(--primary-soft); }
-        
-        /* Cards */
-        .vendor-card, .feed-card {
-            background: var(--bg-surface);
-            border-radius: 20px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border: 1px solid var(--border-light);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .vendor-card:hover { transform: translateY(-2px); border-color: var(--primary); }
-        
-        .btn-primary {
-            background: var(--primary-gradient);
-            border: none;
-            padding: 12px 20px;
-            border-radius: 60px;
-            color: white;
-            font-weight: 600;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-        
-        .btn-secondary {
-            background: transparent;
-            border: 1.5px solid var(--primary);
-            color: var(--primary);
-            border-radius: 60px;
-            padding: 12px 18px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        
-        .input-group {
-            margin-bottom: 1rem;
-            position: relative;
-        }
-        .input-group i {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-        }
-        .input-group input, .input-group textarea, .input-group select {
-            width: 100%;
-            padding: 12px 12px 12px 44px;
-            border: 1px solid var(--border-light);
-            border-radius: 60px;
-            background: var(--bg-card);
-            color: white;
-            font-size: 0.9rem;
-            outline: none;
-        }
-        .input-group textarea {
-            border-radius: 20px;
-            resize: vertical;
-        }
-        
-        .vendor-icon {
-            width: 52px;
-            height: 52px;
-            background: var(--primary-gradient);
-            border-radius: 26px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.3rem;
-            flex-shrink: 0;
-        }
-        
-        .badge-distance {
-            background: var(--primary-soft);
-            border-radius: 20px;
-            padding: 3px 10px;
-            font-size: 0.65rem;
-            color: var(--primary);
-            margin-left: 8px;
-        }
-        
-        .menu-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(255,255,255,0.1);
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--primary);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .menu-chip:hover {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(12px);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .modal-content {
-            background: var(--bg-surface);
-            border-radius: 28px;
-            max-width: 480px;
-            width: 100%;
-            max-height: 85vh;
-            overflow: auto;
-            border: 1px solid var(--border-light);
-        }
-        
-        .modal-header {
-            background: var(--primary-gradient);
-            padding: 16px 20px;
-            color: white;
-            border-radius: 28px 28px 0 0;
-            position: relative;
-        }
-        
-        .close-modal {
-            position: absolute;
-            right: 16px;
-            top: 16px;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 30px;
-            cursor: pointer;
-        }
-        
-        .toast-notification {
-            position: fixed;
-            bottom: 100px;
-            left: 20px;
-            right: 20px;
-            background: var(--primary-gradient);
-            color: white;
-            padding: 14px 18px;
-            border-radius: 28px;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            animation: slideUp 0.3s ease;
-        }
-        
-        @keyframes slideUp {
-            from { transform: translateY(100px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .vote-up.voted { color: var(--primary); }
-        .vote-down.voted { color: #ef4444; }
-        .vote-up, .vote-down {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            color: var(--text-secondary);
-        }
-        
-        .theme-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 44px;
-            border: 2px solid transparent;
-            cursor: pointer;
-        }
-        .theme-btn.active {
-            border-color: white;
-            box-shadow: 0 0 0 2px var(--primary);
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 48px 20px;
-            color: var(--text-secondary);
-        }
-        
-        .search-bar {
-            background: var(--bg-card);
-            border-radius: 60px;
-            padding: 4px 15px;
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-light);
-        }
-        .search-bar input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: white;
-            padding: 12px 0;
-            outline: none;
-        }
-        
-        .search-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-light);
-        }
-        .search-tab-btn {
-            background: none;
-            border: none;
-            padding: 10px 16px;
-            cursor: pointer;
-            color: var(--text-secondary);
-        }
-        .search-tab-btn.active {
-            color: var(--primary);
-            border-bottom: 2px solid var(--primary);
-        }
-        
-        .glass-card {
-            background: var(--bg-surface);
-            border-radius: 24px;
-            padding: 18px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border-light);
-        }
-        
-        h3, h4 { color: white; margin-bottom: 12px; font-weight: 600; }
-        .vendor-menu-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .post-badge {
-            background: var(--primary-soft);
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-        }
-        
-        .hidden { display: none !important; }
-        
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loader {
-            width: 36px;
-            height: 36px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 16px auto;
-        }
-        
-        @keyframes bounce { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-8px); } }
-        
-        .tab-content-area.hidden { display: none; }
+        :root{--primary:#FF6B35;--primary-gradient:linear-gradient(135deg,#FF6B35,#FF8A5C);--primary-soft:rgba(255,107,53,.12);--bg-dark:#0a0a0f;--bg-surface:#14141a;--bg-card:#1c1c24;--bg-elevated:#24242e;--text-primary:#fff;--text-secondary:#9ca3af;--border-light:rgba(255,255,255,.08)}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-dark);overflow:hidden;height:100vh;color:var(--text-primary)}
+        #app{width:100%;height:100%;position:relative}
+        .app-container{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg-dark);overflow:hidden}
+        .tab-pane{flex:1;overflow-y:auto;padding:20px 16px 90px 16px;scroll-behavior:smooth}
+        .tab-pane.hidden{display:none}
+        .map-screen{position:relative;width:100%;height:100%;display:flex;flex-direction:column}
+        .map-search-bar{position:absolute;top:16px;left:16px;right:16px;z-index:500;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);border-radius:60px;padding:12px 20px;display:flex;gap:12px;align-items:center;border:1px solid var(--border-light)}
+        .map-search-bar input{flex:1;background:transparent;border:none;color:#fff;font-size:1rem;outline:none}
+        .map-search-bar button{background:var(--primary-gradient);border:none;padding:8px 20px;border-radius:40px;color:#fff;font-weight:600;cursor:pointer}
+        .map-container{flex:1;width:100%;position:relative}
+        #map{width:100%;height:100%;background:#1a2a3a}
+        .map-controls{position:absolute;bottom:20px;right:20px;display:flex;flex-direction:column;gap:12px;z-index:400}
+        .map-btn{background:rgba(0,0,0,.8);backdrop-filter:blur(10px);border:1px solid var(--border-light);width:48px;height:48px;border-radius:48px;font-size:1.2rem;color:var(--primary);cursor:pointer}
+        .location-status{position:absolute;bottom:20px;left:20px;background:rgba(0,0,0,.7);backdrop-filter:blur(10px);padding:8px 16px;border-radius:40px;font-size:.7rem;z-index:400;color:#fff}
+        .bottom-nav{background:rgba(20,20,26,.95);backdrop-filter:blur(20px);border-top:1px solid var(--border-light);display:flex;justify-content:space-around;padding:8px 16px 12px;flex-shrink:0}
+        .nav-item{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.7rem;color:var(--text-secondary);cursor:pointer;padding:8px 16px;border-radius:40px;transition:all .2s}
+        .nav-item i{font-size:1.3rem}
+        .nav-item.active{color:var(--primary);background:var(--primary-soft)}
+        .post-card,.vendor-card{background:var(--bg-card);border-radius:20px;padding:1rem;margin-bottom:1rem;border:1px solid var(--border-light);cursor:pointer;transition:all .2s}
+        .post-card:hover,.vendor-card:hover{transform:translateY(-2px);border-color:var(--primary)}
+        .post-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+        .post-avatar{width:44px;height:44px;border-radius:44px;background:var(--primary-gradient);display:flex;align-items:center;justify-content:center;font-weight:600}
+        .btn-primary{background:var(--primary-gradient);border:none;padding:14px 24px;border-radius:60px;color:#fff;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+        .btn-primary:disabled{opacity:0.6;cursor:not-allowed}
+        .btn-outline{background:transparent;border:1.5px solid var(--primary);color:var(--primary);border-radius:60px;padding:12px 20px;font-weight:600;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+        .input-group{margin-bottom:1rem;position:relative}
+        .input-group i{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--text-secondary);z-index:1}
+        .input-group input,.input-group textarea,.input-group select{width:100%;padding:14px 14px 14px 48px;border:1px solid var(--border-light);border-radius:60px;background:var(--bg-elevated);color:#fff;font-size:.95rem;outline:none}
+        .vendor-icon{width:56px;height:56px;background:var(--primary-gradient);border-radius:28px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;flex-shrink:0}
+        .badge-distance{background:var(--primary-soft);border-radius:20px;padding:4px 12px;font-size:.65rem;color:var(--primary);margin-left:8px}
+        .chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);padding:6px 14px;border-radius:40px;font-size:.7rem;font-weight:500;color:var(--primary);cursor:pointer}
+        .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+        .modal-card{background:var(--bg-surface);border-radius:28px;max-width:550px;width:100%;max-height:85vh;overflow:auto;border:1px solid var(--border-light)}
+        .modal-header{background:var(--primary-gradient);padding:18px 24px;color:#fff;border-radius:28px 28px 0 0;position:relative}
+        .modal-close{position:absolute;right:20px;top:18px;background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:32px;cursor:pointer}
+        .toast{position:fixed;bottom:100px;left:20px;right:20px;background:var(--primary-gradient);color:#fff;padding:14px 20px;border-radius:28px;z-index:1000;display:flex;justify-content:space-between;align-items:center;animation:slideUp .3s ease}
+        @keyframes slideUp{from{transform:translateY(100px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .empty-state{text-align:center;padding:60px 20px;color:var(--text-secondary)}
+        .flex-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+        .flex-col{display:flex;flex-direction:column;gap:8px}
+        .settings-section{margin-bottom:24px}
+        .settings-item{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border-light);cursor:pointer}
+        .settings-item:last-child{border-bottom:none}
+        .settings-label{font-weight:500}
+        .settings-description{font-size:.7rem;color:var(--text-secondary);margin-top:2px}
+        .eula-content{height:400px;overflow-y:auto;padding:20px;background:var(--bg-elevated);border-radius:16px;margin-bottom:16px;font-size:.85rem;line-height:1.6;white-space:pre-wrap}
+        .eula-notice{margin:15px 0;padding:16px;background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);border-radius:16px;font-size:0.95rem}
+        .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}
+        .stat-card{background:var(--bg-elevated);border-radius:16px;padding:12px;text-align:center}
+        .stat-value{font-size:1.5rem;font-weight:700;color:var(--primary)}
+        .stat-label{font-size:.7rem;color:var(--text-secondary)}
+        .developer-card{background:var(--bg-elevated);border-radius:12px;padding:12px;margin-bottom:8px}
+        .developer-name{font-weight:600}
+        .developer-role{font-size:.75rem;color:var(--text-secondary)}
+        .about-section{margin-bottom:24px}
+        .about-section h4{color:var(--primary);margin-bottom:12px}
+        .loader{width:40px;height:40px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;margin:20px auto}
+        @keyframes spin{to{transform:rotate(360deg)}}
     </style>
 </head>
 <body data-theme="orange">
 <div id="app"></div>
 
 <script>
-    // ======================== LAKO APP - FIXED MAP SIZE ========================
-    console.log('🚀 LAKO App Starting');
-    
-    let currentUser = null;
-    let vendors = [];
-    let posts = [];
-    let shortlist = [];
-    let userVotes = {};
-    let currentLocation = null;
-    let map = null;
-    let userMarker = null;
-    let currentRouteLine = null;
-    let watchId = null;
-    
-    let userPreferences = {
+const API_BASE = 'http://localhost:5000/api';
+let projectInfo = null;
+let eulaData = null;
+
+let state = {
+    user: null,
+    vendors: [],
+    posts: [],
+    shortlist: [],
+    activities: [],
+    votes: {},
+    location: null,
+    filters: { category: null, minRating: 0, radius: 5, timeRange: 'week' },
+    settings: {
         theme: localStorage.getItem('theme') || 'orange',
-        radius: 2,
-        categories: ['BBQ', 'Fishball', 'Isaw', 'Siomai', 'Turon', 'Kwek-Kwek', 'Burger'],
-        selectedCategories: [],
-        notifications: { nearbyVendors: true }
-    };
-    
-    document.body.setAttribute('data-theme', userPreferences.theme);
-    
-    // Vendor Data
-    vendors = [
-        { id: 1, name: "Kuya Jess BBQ & Isaw", address: "Brgy. 1, Tiaong, Quezon", lat: 13.9500, lng: 121.3180, category: "BBQ", rating: 4.8, reviews: 128, hours: "4PM-10PM", price: "₱10-₱50", desc: "Best charcoal grilled isaw and barbecue!" },
-        { id: 2, name: "Mang Tony's Fishball", address: "Tiaong Public Plaza", lat: 13.9515, lng: 121.3150, category: "Fishball", rating: 4.5, reviews: 85, hours: "3PM-9PM", price: "₱5-₱30", desc: "Famous fishball with signature sauce." },
-        { id: 3, name: "Ate Lorna's Siomai", address: "Near Tiaong Church", lat: 13.9520, lng: 121.3190, category: "Siomai", rating: 4.9, reviews: 256, hours: "2PM-8PM", price: "₱15-₱60", desc: "Steamed and fried siomai with garlic mayo." },
-        { id: 4, name: "Turon Queen", address: "Tiaong Market", lat: 13.9485, lng: 121.3165, category: "Turon", rating: 4.6, reviews: 94, hours: "12PM-6PM", price: "₱10-₱25", desc: "Crispy banana turon with langka." },
-        { id: 5, name: "Kwek-Kwek Express", address: "Tiaong Crossing", lat: 13.9530, lng: 121.3175, category: "Kwek-Kwek", rating: 4.7, reviews: 167, hours: "2PM-9PM", price: "₱12-₱40", desc: "Orange-battered kwek-kwek special." },
-        { id: 6, name: "Burger Joint", address: "National Highway", lat: 13.9490, lng: 121.3145, category: "Burger", rating: 4.4, reviews: 203, hours: "24/7", price: "₱25-₱80", desc: "Famous burgers and fries." }
-    ];
-    
-    posts = [
-        { id: 1, title: "Best Isaw Ever!", content: "The isaw is so tender and the sauce is perfect!", rating: 5, date: new Date().toISOString(), author: "Kyle M.", vendor: "Kuya Jess BBQ", upvotes: 24, downvotes: 2 },
-        { id: 2, title: "Fishball King!", content: "Best fishball in Tiaong! The spicy vinegar sauce is amazing.", rating: 5, date: new Date().toISOString(), author: "Alex C.", vendor: "Mang Tony's", upvotes: 18, downvotes: 1 },
-        { id: 3, title: "Siomai Super Sulit!", content: "4 pieces for 50 pesos with free sauce!", rating: 5, date: new Date().toISOString(), author: "Maria S.", vendor: "Ate Lorna's", upvotes: 32, downvotes: 3 }
-    ];
-    
-    function escapeHtml(str) { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
-    function formatDate(date) { return new Date(date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }); }
-    function calcDistance(lat1, lng1, lat2, lng2) {
-        const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLng = (lng2 - lng1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLng/2) * Math.sin(dLng/2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        notifications: { push: true, geofence: true, email: true },
+        privacy: { shareLocation: true, shareActivity: true },
+        preferences: { categories: [], radius: 5, interests: [] }
     }
-    
-    // Auth Functions
-    async function login(email, pass) { if (email && pass) { currentUser = { id: 1, name: "Foodie Explorer", email: email }; localStorage.setItem('userId', '1'); return true; } return false; }
-    async function register(name, email, phone, pass) { currentUser = { id: 1, name: name, email: email }; localStorage.setItem('userId', '1'); return true; }
-    async function logout() { localStorage.removeItem('userId'); currentUser = null; if (watchId) navigator.geolocation.clearWatch(watchId); }
-    async function loadUser(id) { currentUser = { id: 1, name: "Foodie Explorer", email: "foodie@gmail.com" }; return true; }
-    async function addToShortlist(id) { if (!shortlist.find(v => v.id === id)) shortlist.push(vendors.find(v => v.id === id)); return true; }
-    async function removeFromShortlist(id) { shortlist = shortlist.filter(v => v.id !== id); return true; }
-    async function createPost(data) { posts.unshift({ id: Date.now(), ...data, date: new Date().toISOString(), author: currentUser.name, upvotes: 0, downvotes: 0 }); return true; }
-    async function vote(id, type) { const post = posts.find(p => p.id === id); if (post) { if (type === 1) post.upvotes++; else post.downvotes++; userVotes[id] = type; } return true; }
-    
-    // Location Tracking
-    function startLocationTracking() {
-        if (watchId) navigator.geolocation.clearWatch(watchId);
-        if (!navigator.geolocation) {
-            currentLocation = { lat: 13.9500, lng: 121.3167 };
-            updateLocationUI();
-            return;
+};
+
+let watchId = null;
+let geofenceAlerts = new Set();
+let offlineQueue = [];
+
+function escapeHtml(str) { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
+function formatRelativeTime(date) {
+    const now = new Date();
+    const diff = now - new Date(date);
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return minutes + 'm ago';
+    if (hours < 24) return hours + 'h ago';
+    if (days < 7) return days + 'd ago';
+    return new Date(date).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+function showToast(msg) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" style="background:white;border:none;padding:6px 14px;border-radius:40px;cursor:pointer">OK</button>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
+
+const API = {
+    async request(endpoint, options = {}) {
+        const headers = { 'Content-Type': 'application/json', ...options.headers };
+        if (state.user && state.user.id) headers['X-User-Id'] = state.user.id;
+        const res = await fetch(API_BASE + endpoint, { ...options, headers });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Request failed');
+        return data;
+    },
+    async getProjectInfo() {
+        try { const data = await this.request('/project/info'); projectInfo = data; return data; } 
+        catch(e) { return null; }
+    },
+    async getEULA() {
+        try { 
+            const data = await this.request('/legal/eula'); 
+            eulaData = data; 
+            return data; 
+        } catch(e) { 
+            return { content: "End User License Agreement\n\nThis is a Capstone Project at AITE.\n\nBy using this application, you agree to the terms.", version: "1.0.0" }; 
         }
-        
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                updateMapLocation();
-                updateLocationUI();
-                updateNearbyVendors();
-                renderNearbyList();
-            },
-            (err) => { 
-                currentLocation = { lat: 13.9500, lng: 121.3167 };
-                updateLocationUI();
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-        
-        watchId = navigator.geolocation.watchPosition(
-            (pos) => {
-                currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                updateMapLocation();
-                updateLocationUI();
-                updateNearbyVendors();
-                renderNearbyList();
-            },
-            (err) => {},
-            { enableHighAccuracy: true, maximumAge: 5000 }
-        );
-    }
-    
-    function updateMapLocation() {
-        if (map && currentLocation) {
-            if (userMarker) userMarker.setLatLng([currentLocation.lat, currentLocation.lng]);
-            else {
-                userMarker = L.marker([currentLocation.lat, currentLocation.lng], {
-                    icon: L.divIcon({
-                        html: '<div style="background: var(--primary); width: 40px; height: 40px; border-radius: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 2px solid white;"><i class="fas fa-user" style="color: white; font-size: 18px;"></i></div>',
-                        iconSize: [40, 40]
-                    })
-                }).addTo(map).bindPopup('📍 You are here');
-            }
-            map.setView([currentLocation.lat, currentLocation.lng], 15);
+    },
+    async acceptEULA(version) {
+        return this.request('/legal/accept-eula', { method: 'POST', body: JSON.stringify({ version }) });
+    },
+    async checkEULAAccepted() {
+        try {
+            return this.request('/legal/check-eula');
+        } catch(e) {
+            return { accepted: false };
         }
-    }
-    
-    function updateLocationUI() {
-        const status = document.getElementById('mapLocationStatus');
-        if (status && currentLocation) {
-            status.innerHTML = `<i class="fas fa-satellite-dish"></i> GPS: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`;
+    },
+    async login(email, password) {
+        const data = await this.request('/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+        if (data.success) {
+            state.user = { id: data.id, full_name: data.full_name, email: data.email, phone: data.phone };
+            localStorage.setItem('lako_user', JSON.stringify(state.user));
+            await this.loadUserData();
         }
-    }
-    
-    function updateNearbyVendors() {
-        if (!currentLocation) return;
-        const nearby = vendors.filter(v => calcDistance(currentLocation.lat, currentLocation.lng, v.lat, v.lng) <= userPreferences.radius);
-        const container = document.getElementById('nearbyVendorsList');
-        if (container) {
-            container.innerHTML = nearby.slice(0, 8).map(v => `<span class="menu-chip" onclick="showVendorDetail(${v.id})"><i class="fas fa-store"></i> ${escapeHtml(v.name)}</span>`).join('');
+        return data;
+    },
+    async register(data) {
+        return this.request('/register', { method: 'POST', body: JSON.stringify(data) });
+    },
+    async loadUserData() {
+        if (!state.user) return;
+        const [vendors, posts, shortlist, activities, votes] = await Promise.all([
+            this.request('/vendors').catch(() => []),
+            this.request('/posts?sort=new&limit=50').catch(() => []),
+            this.request(`/shortlist/user/${state.user.id}`).catch(() => []),
+            this.request(`/activities/user/${state.user.id}`).catch(() => []),
+            this.request(`/votes/user/${state.user.id}`).catch(() => [])
+        ]);
+        state.vendors = vendors;
+        state.posts = posts;
+        state.shortlist = shortlist;
+        state.activities = activities;
+        state.votes = votes.reduce((acc, v) => { acc[v.post_id] = v.vote_type; return acc; }, {});
+        this.renderAll();
+    },
+    async addToShortlist(vendorId) {
+        if (navigator.onLine) {
+            await this.request('/shortlist', { method: 'POST', body: JSON.stringify({ vendor_id: vendorId }) });
+        } else {
+            offlineQueue.push({action: 'addShortlist', vendorId});
+            showToast('Action queued for sync');
         }
-    }
-    
-    function renderNearbyList() {
-        const container = document.getElementById('nearbyFullList');
-        if (!container || !currentLocation) return;
-        
-        let filtered = vendors.filter(v => calcDistance(currentLocation.lat, currentLocation.lng, v.lat, v.lng) <= userPreferences.radius);
-        if (userPreferences.selectedCategories.length) {
-            filtered = filtered.filter(v => userPreferences.selectedCategories.includes(v.category));
+        await this.loadUserData();
+        showToast('Added to shortlist');
+    },
+    async removeFromShortlist(vendorId) {
+        if (navigator.onLine) {
+            await this.request(`/shortlist/${vendorId}/user/${state.user.id}`, { method: 'DELETE' });
+        } else {
+            offlineQueue.push({action: 'removeShortlist', vendorId});
+            showToast('Action queued for sync');
         }
-        filtered.sort((a, b) => calcDistance(currentLocation.lat, currentLocation.lng, a.lat, a.lng) - calcDistance(currentLocation.lat, currentLocation.lng, b.lat, b.lng));
-        
-        container.innerHTML = filtered.map(v => {
-            const dist = calcDistance(currentLocation.lat, currentLocation.lng, v.lat, v.lng);
-            const distText = dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
-            return `<div class="vendor-card" onclick="showVendorDetail(${v.id})">
-                <div style="display: flex; gap: 14px; align-items: center;">
-                    <div class="vendor-icon"><i class="fas fa-utensils"></i></div>
-                    <div style="flex: 1;">
-                        <h4 style="margin-bottom: 4px;">${escapeHtml(v.name)} <span class="badge-distance">${distText}</span></h4>
-                        <p style="font-size: 0.75rem; color: var(--text-secondary);"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(v.address)}</p>
-                        <p style="font-size: 0.8rem;"><i class="fas fa-star" style="color: #fbbf24;"></i> ${v.rating} (${v.reviews} reviews)</p>
-                        <div style="display: flex; gap: 8px; margin-top: 10px;">
-                            <span class="menu-chip" onclick="event.stopPropagation(); navigateToVendor(${v.id})"><i class="fas fa-route"></i> Navigate</span>
-                            <span class="menu-chip" onclick="event.stopPropagation(); messageVendor()"><i class="fab fa-facebook-messenger"></i> Chat</span>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
-        if (!filtered.length) container.innerHTML = '<div class="empty-state"><i class="fas fa-map-pin"></i><p>No vendors within radius.</p></div>';
-    }
-    
-    function renderFeed() {
+        await this.loadUserData();
+        showToast('Removed from shortlist');
+    },
+    async createPost(data) {
+        if (navigator.onLine) {
+            await this.request('/posts', { method: 'POST', body: JSON.stringify(data) });
+        } else {
+            offlineQueue.push({action: 'createPost', data});
+            showToast('Post queued for sync');
+        }
+        await this.loadUserData();
+        showToast('Post created successfully');
+    },
+    async vote(postId, type) {
+        if (navigator.onLine) {
+            await this.request('/votes', { method: 'POST', body: JSON.stringify({ post_id: postId, vote_type: type }) });
+        } else {
+            offlineQueue.push({action: 'vote', postId, type});
+            showToast('Vote queued for sync');
+        }
+        await this.loadUserData();
+    },
+    async createActivity(activity) {
+        if (navigator.onLine) {
+            await this.request('/activities', { method: 'POST', body: JSON.stringify(activity) });
+        } else {
+            offlineQueue.push({action: 'createActivity', activity});
+        }
+    },
+    async getMessengerLink(vendorId) { return this.request(`/vendors/${vendorId}/messenger`); },
+    async getRecommendations() { return this.request(`/recommendations/user/${state.user.id}`).catch(() => []); },
+    renderAll() { this.renderFeed(); this.renderShortlist(); this.renderActivities(); this.renderProfile(); },
+    renderFeed() {
         const container = document.getElementById('feedList');
         if (!container) return;
-        container.innerHTML = posts.map(post => {
-            const score = (post.upvotes || 0) - (post.downvotes || 0);
-            const isUpvoted = userVotes[post.id] === 1;
-            return `<div class="feed-card" onclick="showPostDetail(${post.id})">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <div style="display: flex; gap: 6px;">
-                        <button class="vote-up ${isUpvoted ? 'voted' : ''}" onclick="event.stopPropagation(); handleVote(${post.id}, 1)"><i class="fas fa-arrow-up"></i></button>
-                        <span style="font-weight: 500;">${score}</span>
-                        <button class="vote-down" onclick="event.stopPropagation(); handleVote(${post.id}, -1)"><i class="fas fa-arrow-down"></i></button>
+        let filtered = [...state.posts];
+        if (!filtered.length) { container.innerHTML = '<div class="empty-state"><i class="fas fa-newspaper"></i><p>No posts yet. Be the first to share!</p></div>'; return; }
+        container.innerHTML = filtered.map(post => {
+            const isLiked = state.votes[post.id] === 1;
+            const vendor = state.vendors.find(v => v.id === post.vendor_id);
+            const initials = (post.author_name || 'U').charAt(0).toUpperCase();
+            return `<div class="post-card" onclick="window.showPostDetail(${post.id})">
+                <div class="post-header">
+                    <div class="post-avatar">${initials}</div>
+                    <div class="flex-col" style="gap:2px">
+                        <div style="font-weight:600">${escapeHtml(post.author_name || 'Anonymous')}</div>
+                        <div style="font-size:.7rem;color:var(--text-secondary)">${formatRelativeTime(post.created_at)}${post.rating ? ` · ${'★'.repeat(post.rating)}${'☆'.repeat(5-post.rating)}` : ''}</div>
                     </div>
-                    ${post.rating ? `<span class="post-badge"><i class="fas fa-star"></i> ${post.rating}/5</span>` : ''}
                 </div>
-                <h3 style="font-size: 1.1rem; margin-bottom: 8px;">${escapeHtml(post.title)}</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 10px;">${escapeHtml(post.content)}</p>
-                <div style="display: flex; gap: 12px; font-size: 0.7rem; color: var(--text-secondary);">
-                    <span><i class="fas fa-user-circle"></i> ${escapeHtml(post.author)}</span>
-                    <span><i class="fas fa-calendar"></i> ${formatDate(post.date)}</span>
-                    ${post.vendor ? `<span><i class="fas fa-store"></i> ${escapeHtml(post.vendor)}</span>` : ''}
+                <div style="font-weight:600;margin-bottom:6px">${escapeHtml(post.title)}</div>
+                <div style="color:var(--text-secondary);font-size:.85rem">${escapeHtml(post.content.length > 150 ? post.content.substring(0,150)+'...' : post.content)}</div>
+                ${vendor ? `<div class="chip" style="margin-top:8px" onclick="event.stopPropagation();window.showVendorDetail(${vendor.id})"><i class="fas fa-store"></i> ${escapeHtml(vendor.business_name)}</div>` : ''}
+                <div class="flex-row" style="gap:20px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light)">
+                    <button onclick="event.stopPropagation();window.votePost(${post.id},1)" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:6px"><i class="fas fa-arrow-up" style="${isLiked ? 'color:var(--primary)' : ''}"></i> ${post.upvotes||0}</button>
+                    <button onclick="event.stopPropagation();" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:6px"><i class="fas fa-comment"></i> ${post.comment_count||0}</button>
+                    <button onclick="event.stopPropagation();window.sharePost()" style="background:none;border:none;color:var(--text-secondary);cursor:pointer"><i class="fas fa-share"></i></button>
                 </div>
             </div>`;
         }).join('');
-    }
-    
-    function renderShortlist() {
-        const container = document.getElementById('shortlistContainer');
+    },
+    renderShortlist() {
+        const container = document.getElementById('shortlistList');
         if (!container) return;
-        if (!shortlist.length) {
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-heart"></i><p>No saved vendors yet.</p></div>';
-            return;
-        }
-        container.innerHTML = shortlist.map(v => `<div class="vendor-card" onclick="showVendorDetail(${v.id})">
-            <div style="display: flex; gap: 14px; align-items: center;">
-                <div class="vendor-icon"><i class="fas fa-store"></i></div>
-                <div style="flex: 1;">
-                    <h4>${escapeHtml(v.name)}</h4>
-                    <p style="font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(v.address)}</p>
-                    <div style="display: flex; gap: 8px; margin-top: 10px;">
-                        <span class="menu-chip" onclick="event.stopPropagation(); navigateToVendor(${v.id})"><i class="fas fa-route"></i> Navigate</span>
-                        <span class="menu-chip" onclick="event.stopPropagation(); removeFromShortlistUI(${v.id})"><i class="fas fa-trash"></i> Remove</span>
+        if (!state.shortlist.length) { container.innerHTML = '<div class="empty-state"><i class="fas fa-heart"></i><p>Your saved vendors will appear here</p></div>'; return; }
+        container.innerHTML = state.shortlist.map(v => `
+            <div class="vendor-card" onclick="window.showVendorDetail(${v.id})">
+                <div class="flex-row">
+                    <div class="vendor-icon"><i class="fas fa-store"></i></div>
+                    <div style="flex:1">
+                        <div><strong>${escapeHtml(v.business_name)}</strong> <span class="badge-distance">${v.rating ? '★'+v.rating : 'New'}</span></div>
+                        <div style="font-size:.75rem;color:var(--text-secondary)">${escapeHtml(v.address || 'Location pending')}</div>
+                        <div class="flex-row" style="margin-top:8px;gap:8px">
+                            <span class="chip" onclick="event.stopPropagation();window.navigateToVendor(${v.id})"><i class="fas fa-route"></i> Navigate</span>
+                            <span class="chip" onclick="event.stopPropagation();window.chatWithVendor(${v.id})"><i class="fab fa-facebook-messenger"></i> Chat</span>
+                            <span class="chip" onclick="event.stopPropagation();window.requestSampleFromVendor(${v.id})"><i class="fas fa-box"></i> Sample</span>
+                            <span class="chip" onclick="event.stopPropagation();window.removeFromShortlist(${v.id})"><i class="fas fa-trash"></i> Remove</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>`).join('');
-    }
-    
-    // Map Functions
-    function initMap() {
-        const container = document.getElementById('map');
+        `).join('');
+    },
+    renderActivities() {
+        const container = document.getElementById('activitiesList');
         if (!container) return;
-        
-        if (map) {
-            map.remove();
-            map = null;
-        }
-        
-        const center = currentLocation || { lat: 13.9500, lng: 121.3167 };
-        map = L.map('map').setView([center.lat, center.lng], 14);
-        
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© CartoDB',
-            subdomains: 'abcd',
-            maxZoom: 19
-        }).addTo(map);
-        
-        vendors.forEach(vendor => {
-            const marker = L.marker([vendor.lat, vendor.lng], {
-                icon: L.divIcon({
-                    html: `<div style="background: var(--primary); width: 34px; height: 34px; border-radius: 34px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 2px solid white;"><i class="fas fa-utensils" style="color: white; font-size: 14px;"></i></div>`,
-                    iconSize: [34, 34]
-                })
-            }).bindPopup(`
-                <div style="min-width: 150px;">
-                    <b>${escapeHtml(vendor.name)}</b><br>
-                    ⭐ ${vendor.rating}/5<br>
-                    ${escapeHtml(vendor.address)}<br>
-                    <button onclick="navigateToVendor(${vendor.id})" style="margin-top: 5px; background: var(--primary); color: white; border: none; padding: 4px 10px; border-radius: 20px; cursor: pointer;">Navigate</button>
-                </div>
-            `);
-            marker.addTo(map);
-        });
-        
-        if (currentLocation) {
-            userMarker = L.marker([currentLocation.lat, currentLocation.lng], {
-                icon: L.divIcon({
-                    html: `<div style="background: var(--primary); width: 40px; height: 40px; border-radius: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 2px solid white;"><i class="fas fa-user" style="color: white; font-size: 18px;"></i></div>`,
-                    iconSize: [40, 40]
-                })
-            }).addTo(map).bindPopup('📍 You are here');
-        }
-        
-        setTimeout(() => {
-            if (map) map.invalidateSize();
-        }, 200);
-    }
-    
-    window.navigateToVendor = (vendorId) => {
-        const vendor = vendors.find(v => v.id === vendorId);
-        if (!vendor || !currentLocation) {
-            alert('Location not available');
-            return;
-        }
-        
-        if (currentRouteLine && map) map.removeLayer(currentRouteLine);
-        
-        const latlngs = [[currentLocation.lat, currentLocation.lng], [vendor.lat, vendor.lng]];
-        currentRouteLine = L.polyline(latlngs, { 
-            color: getComputedStyle(document.body).getPropertyValue('--primary').trim(), 
-            weight: 4, 
-            dashArray: '8, 8' 
-        }).addTo(map);
-        map.fitBounds(latlngs, { padding: [40, 40] });
-        
-        const distance = calcDistance(currentLocation.lat, currentLocation.lng, vendor.lat, vendor.lng);
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification';
-        toast.innerHTML = `<div><i class="fas fa-route"></i> <strong>${escapeHtml(vendor.name)}</strong><br><small>${distance < 1 ? Math.round(distance * 1000) + 'm' : distance.toFixed(1) + 'km'}</small></div><button onclick="this.remove()" style="background:white; border:none; padding:5px 12px; border-radius:30px;">OK</button>`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 4000);
-    };
-    
-    window.showVendorDetail = (id) => {
-        const v = vendors.find(v => v.id === id);
-        if (!v) return;
-        const isSaved = shortlist.some(s => s.id === id);
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `<div class="modal-content">
-            <div class="modal-header"><h3>${escapeHtml(v.name)}</h3><button class="close-modal">✕</button></div>
-            <div style="padding: 20px;">
-                <p><i class="fas fa-star" style="color: #fbbf24;"></i> ${v.rating}/5 (${v.reviews} reviews)</p>
-                <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(v.address)}</p>
-                <p><i class="fas fa-tag"></i> ${v.category} | ${v.hours}</p>
-                <p><i class="fas fa-tag"></i> ${v.price}</p>
-                <p>${escapeHtml(v.desc)}</p>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="menu-chip" onclick="navigateToVendor(${v.id}); document.querySelector('.modal-overlay')?.remove();" style="flex:1"><i class="fas fa-route"></i> Navigate</button>
-                    <button class="menu-chip" id="saveBtn" style="flex:1"><i class="fas fa-${isSaved ? 'heart' : 'heart-o'}"></i> ${isSaved ? 'Saved' : 'Save'}</button>
+        if (!state.activities.length) { container.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i><p>Your activity history will appear here</p></div>'; return; }
+        container.innerHTML = state.activities.map(a => `
+            <div class="vendor-card" onclick="${a.vendor_id ? `window.showVendorDetail(${a.vendor_id})` : ''}">
+                <div class="flex-row">
+                    <div style="width:44px;height:44px;background:var(--primary-soft);border-radius:44px;display:flex;align-items:center;justify-content:center">
+                        <i class="fas ${a.activity_type === 'view' ? 'fa-eye' : a.activity_type === 'navigate' ? 'fa-route' : a.activity_type === 'chat' ? 'fa-comment' : a.activity_type === 'sample_request' ? 'fa-box' : 'fa-clock'}" style="color:var(--primary)"></i>
+                    </div>
+                    <div style="flex:1">
+                        <div><strong>${a.activity_type === 'view' ? 'Viewed' : a.activity_type === 'navigate' ? 'Navigated to' : a.activity_type === 'chat' ? 'Chatted with' : a.activity_type === 'sample_request' ? 'Requested sample from' : a.activity_type} ${a.vendor_name || 'a vendor'}</strong></div>
+                        <div style="font-size:.7rem;color:var(--text-secondary)">${formatRelativeTime(a.created_at)}</div>
+                    </div>
                 </div>
             </div>
-        </div>`;
-        document.body.appendChild(modal);
-        modal.querySelector('.close-modal').onclick = () => modal.remove();
-        modal.querySelector('#saveBtn').onclick = async () => {
-            if (isSaved) await removeFromShortlist(id);
-            else await addToShortlist(id);
-            modal.remove();
-            showVendorDetail(id);
-        };
-    };
-    
-    window.showPostDetail = (id) => {
-        const post = posts.find(p => p.id === id);
-        if (!post) return;
-        alert(`📝 ${post.title}\n\n${post.content}\n\n⭐ ${post.rating}/5\n👤 ${post.author}`);
-    };
-    
-    window.handleVote = async (id, type) => { await vote(id, type); renderFeed(); };
-    window.messageVendor = () => { window.open('https://m.me/lakoapp', '_blank'); };
-    window.removeFromShortlistUI = async (id) => { await removeFromShortlist(id); renderShortlist(); };
-    
-    function showCreatePostModal() {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `<div class="modal-content">
-            <div class="modal-header"><h3>Share Your Experience</h3><button class="close-modal">✕</button></div>
-            <div style="padding: 20px;">
-                <div class="input-group"><i class="fas fa-store"></i><select id="postVendor"><option value="">Select Vendor</option>${vendors.map(v => `<option value="${v.id}">${escapeHtml(v.name)}</option>`).join('')}</select></div>
-                <div class="input-group"><i class="fas fa-heading"></i><input id="postTitle" placeholder="Title *"></div>
-                <div class="input-group"><i class="fas fa-star"></i><select id="postRating"><option value="">Rating</option><option value="5">★★★★★</option><option value="4">★★★★☆</option><option value="3">★★★☆☆</option><option value="2">★★☆☆☆</option><option value="1">★☆☆☆☆</option></select></div>
-                <div class="input-group"><i class="fas fa-comment"></i><textarea id="postContent" rows="3" placeholder="Your review *"></textarea></div>
-                <button id="submitPost" class="btn-primary">Post Review</button>
-            </div>
-        </div>`;
-        document.body.appendChild(modal);
-        modal.querySelector('.close-modal').onclick = () => modal.remove();
-        modal.querySelector('#submitPost').onclick = async () => {
-            const vendorId = document.getElementById('postVendor').value;
-            const title = document.getElementById('postTitle').value;
-            const rating = document.getElementById('postRating').value;
-            const content = document.getElementById('postContent').value;
-            if (!title || !content) { alert('Please fill title and content'); return; }
-            await createPost({ title, content, rating: rating ? parseInt(rating) : null, vendor: vendors.find(v => v.id == vendorId)?.name });
-            modal.remove();
-            renderFeed();
-            alert('Post created!');
-        };
-    }
-    
-    function setupSearch() {
-        document.getElementById('searchExec')?.addEventListener('click', () => {
-            const q = document.getElementById('searchInput')?.value.toLowerCase();
-            if (!q) return;
-            const type = document.querySelector('.search-tab-btn.active')?.dataset.type || 'vendors';
-            const results = document.getElementById('searchResults');
-            if (type === 'vendors') {
-                const res = vendors.filter(v => v.name.toLowerCase().includes(q) || v.category.toLowerCase().includes(q));
-                results.innerHTML = res.map(v => `<div class="vendor-card" onclick="showVendorDetail(${v.id})"><div class="vendor-icon"><i class="fas fa-store"></i></div><div><h4>${escapeHtml(v.name)}</h4><p style="font-size:0.75rem;">${escapeHtml(v.address)}</p></div></div>`).join('');
-                if (!res.length) results.innerHTML = '<div class="empty-state">No vendors found</div>';
-            } else {
-                const res = posts.filter(p => p.title.toLowerCase().includes(q) || p.content.toLowerCase().includes(q));
-                results.innerHTML = res.map(p => `<div class="feed-card" onclick="showPostDetail(${p.id})"><h3>${escapeHtml(p.title)}</h3><p>${p.content.substring(0, 80)}...</p></div>`).join('');
-                if (!res.length) results.innerHTML = '<div class="empty-state">No posts found</div>';
-            }
-        });
-    }
-    
-    function setupTheme() {
-        document.querySelectorAll('.theme-btn').forEach(btn => {
-            btn.onclick = () => {
-                const t = btn.dataset.theme;
-                document.body.setAttribute('data-theme', t);
-                localStorage.setItem('theme', t);
-                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                if (map) initMap();
-            };
-            if (btn.dataset.theme === userPreferences.theme) btn.classList.add('active');
-        });
-    }
-    
-    // Navigation
-    async function showSplash() {
-        document.getElementById('app').innerHTML = `<div class="main-screen" id="splashScreen"><div style="display: flex; align-items: center; justify-content: center; height: 100%; background: var(--primary-gradient);"><div style="text-align: center;"><i class="fas fa-utensils" style="font-size: 4rem; margin-bottom: 16px; animation: bounce 0.9s ease infinite;"></i><h1 style="font-size: 2.5rem;">LAKO</h1><p style="opacity: 0.9; margin-top: 8px;">street food · nearby · local</p><div class="loader"></div></div></div></div>`;
-        const userId = localStorage.getItem('userId');
-        if (userId && await loadUser(userId)) { setTimeout(() => showMainApp(), 1000); }
-        else { setTimeout(() => showLanding(), 1500); }
-    }
-    
-    function showLanding() {
-        document.getElementById('app').innerHTML = `<div class="main-screen"><div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 20px; background: linear-gradient(135deg, #0f172a, #1e293b);"><div class="glass-card" style="max-width: 380px; width: 100%; text-align: center;"><i class="fas fa-utensils" style="font-size: 4rem; color: var(--primary); margin-bottom: 16px;"></i><h1 style="font-size: 2.2rem;">LAKO</h1><p style="color: var(--text-secondary); margin: 16px 0;">Discover street food vendors near you</p><button id="loginBtn" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button><button id="registerBtn" class="btn-secondary" style="margin-top: 12px;"><i class="fas fa-user-plus"></i> Sign Up</button></div></div></div>`;
-        document.getElementById('loginBtn').onclick = showLogin;
-        document.getElementById('registerBtn').onclick = showRegister;
-    }
-    
-    function showLogin() {
-        document.getElementById('app').innerHTML = `<div class="main-screen"><div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 20px; background: linear-gradient(135deg, #0f172a, #1e293b);"><div class="glass-card" style="max-width: 380px; width: 100%;"><h2 style="text-align:center; margin-bottom: 20px;">Welcome Back</h2><div class="input-group"><i class="fas fa-envelope"></i><input id="loginEmail" placeholder="your@gmail.com"></div><div class="input-group"><i class="fas fa-lock"></i><input id="loginPassword" type="password" placeholder="Password"></div><button id="doLoginBtn" class="btn-primary">Login</button><button id="backLanding" class="btn-secondary" style="margin-top: 12px;">Back</button></div></div></div>`;
-        document.getElementById('doLoginBtn').onclick = async () => {
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('loginPassword').value;
-            if (email && pass && await login(email, pass)) { showMainApp(); }
-            else alert('Try: demo@gmail.com');
-        };
-        document.getElementById('backLanding').onclick = showLanding;
-    }
-    
-    function showRegister() {
-        document.getElementById('app').innerHTML = `<div class="main-screen"><div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 20px; background: linear-gradient(135deg, #0f172a, #1e293b);"><div class="glass-card" style="max-width: 380px; width: 100%;"><h2 style="text-align:center; margin-bottom: 20px;">Create Account</h2><div class="input-group"><i class="fas fa-user"></i><input id="regName" placeholder="Full Name"></div><div class="input-group"><i class="fas fa-envelope"></i><input id="regEmail" placeholder="your@gmail.com"></div><div class="input-group"><i class="fas fa-phone"></i><input id="regPhone" placeholder="Phone"></div><div class="input-group"><i class="fas fa-lock"></i><input id="regPass" type="password" placeholder="Password"></div><button id="doRegisterBtn" class="btn-primary">Sign Up</button><button id="backLoginReg" class="btn-secondary" style="margin-top: 12px;">Back</button></div></div></div>`;
-        document.getElementById('doRegisterBtn').onclick = async () => {
-            const name = document.getElementById('regName').value;
-            const email = document.getElementById('regEmail').value;
-            const phone = document.getElementById('regPhone').value;
-            const pass = document.getElementById('regPass').value;
-            if (name && email && pass && await register(name, email, phone, pass)) { showMainApp(); }
-            else alert('Please fill all fields');
-        };
-        document.getElementById('backLoginReg').onclick = showLogin;
-    }
-    
-    async function showMainApp() {
-        if (!currentUser) return;
-        
-        const html = `
-            <div class="main-screen">
-                <!-- Tab Content Area -->
-                <div id="feedTab" class="tab-content-area">
-                    <div class="container" style="max-width: 560px; margin: 0 auto;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                            <h3 style="font-size: 1.3rem;"><i class="fas fa-fire"></i> Foodie Feed</h3>
-                            <button id="createPostBtn" style="background: var(--primary-gradient); border: none; padding: 8px 18px; border-radius: 40px; color: white; font-weight: 600; cursor: pointer;"><i class="fas fa-plus"></i> Share</button>
-                        </div>
-                        <div id="feedList"></div>
-                    </div>
-                </div>
-                
-                <div id="mapTab" class="tab-content-area hidden">
-                    <div class="map-container">
-                        <div class="location-badge" id="mapLocationStatus"><i class="fas fa-spinner fa-pulse"></i> Getting location...</div>
-                        <div id="map"></div>
-                        <div class="map-controls">
-                            <button id="centerLocationBtn" class="control-btn"><i class="fas fa-location-dot"></i></button>
-                            <button id="refreshMapBtn" class="control-btn"><i class="fas fa-sync-alt"></i></button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="nearbyTab" class="tab-content-area hidden">
-                    <div class="container" style="max-width: 560px; margin: 0 auto;">
-                        <h3><i class="fas fa-map-pin"></i> Vendors Within ${userPreferences.radius}km</h3>
-                        <div id="nearbyVendorsList" class="vendor-menu-row" style="margin:12px 0"></div>
-                        <div id="nearbyFullList"></div>
-                    </div>
-                </div>
-                
-                <div id="shortlistTab" class="tab-content-area hidden">
-                    <div class="container" style="max-width: 560px; margin: 0 auto;">
-                        <h3><i class="fas fa-heart"></i> Saved Vendors</h3>
-                        <div id="shortlistContainer"></div>
-                    </div>
-                </div>
-                
-                <div id="searchTab" class="tab-content-area hidden">
-                    <div class="container" style="max-width: 560px; margin: 0 auto;">
-                        <div class="search-bar">
-                            <i class="fas fa-search"></i>
-                            <input id="searchInput" placeholder="Search vendors or posts...">
-                            <button id="searchExec" style="background: none; border: none; color: var(--primary); cursor: pointer;"><i class="fas fa-arrow-right"></i></button>
-                        </div>
-                        <div class="search-tabs">
-                            <button class="search-tab-btn active" data-type="vendors"><i class="fas fa-store"></i> Vendors</button>
-                            <button class="search-tab-btn" data-type="posts"><i class="fas fa-newspaper"></i> Posts</button>
-                        </div>
-                        <div id="searchResults"></div>
-                    </div>
-                </div>
-                
-                <div id="profileTab" class="tab-content-area hidden">
-                    <div class="container" style="max-width: 560px; margin: 0 auto;">
-                        <div class="glass-card" style="text-align:center">
-                            <i class="fas fa-user-circle" style="font-size: 4rem; color: var(--primary);"></i>
-                            <h3 style="margin-top: 8px;">${escapeHtml(currentUser.name)}</h3>
-                            <p style="font-size: 0.85rem;">${escapeHtml(currentUser.email)}</p>
-                        </div>
-                        <div class="glass-card">
-                            <h4>🎨 Theme</h4>
-                            <div class="theme-colors" style="display: flex; gap: 10px; margin-top: 10px;">
-                                <button class="theme-btn" data-theme="green" style="background:#10b981"></button>
-                                <button class="theme-btn" data-theme="blue" style="background:#3b82f6"></button>
-                                <button class="theme-btn" data-theme="purple" style="background:#8b5cf6"></button>
-                                <button class="theme-btn" data-theme="orange" style="background:#f97316"></button>
-                                <button class="theme-btn" data-theme="pink" style="background:#ec489a"></button>
-                            </div>
-                        </div>
-                        <div class="glass-card">
-                            <h4><i class="fas fa-sliders-h"></i> Discovery Radius</h4>
-                            <input type="range" id="radiusSlider" min="0.5" max="5" step="0.1" value="${userPreferences.radius}" style="width:100%; margin: 10px 0;">
-                            <span id="radiusValue" style="color: var(--primary);">${userPreferences.radius} km</span>
-                        </div>
-                        <div class="glass-card">
-                            <h4><i class="fas fa-utensils"></i> Categories</h4>
-                            <div id="categoriesFilter" class="vendor-menu-row"></div>
-                        </div>
-                        <div class="glass-card">
-                            <h4><i class="fas fa-info-circle"></i> About</h4>
-                            <p style="font-size: 0.8rem;">Version 2.1 · Tiaong, Quezon</p>
-                            <p style="font-size: 0.8rem;">Kyle Morillo & Alexander Millicamp</p>
-                        </div>
-                        <button id="logoutBtn" style="background: #dc2626; border: none; padding: 12px; border-radius: 60px; color: white; font-weight: 600; width: 100%; cursor: pointer;"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                    </div>
-                </div>
-                
-                <!-- Bottom Navigation -->
-                <div class="bottom-nav">
-                    <button data-tab="feed" class="nav-btn active"><i class="fas fa-newspaper"></i><span>Feed</span></button>
-                    <button data-tab="map" class="nav-btn"><i class="fas fa-map-marked-alt"></i><span>Map</span></button>
-                    <button data-tab="nearby" class="nav-btn"><i class="fas fa-location-dot"></i><span>Nearby</span></button>
-                    <button data-tab="shortlist" class="nav-btn"><i class="fas fa-heart"></i><span>Saved</span></button>
-                    <button data-tab="search" class="nav-btn"><i class="fas fa-search"></i><span>Search</span></button>
-                    <button data-tab="profile" class="nav-btn"><i class="fas fa-user"></i><span>Profile</span></button>
+        `).join('');
+    },
+    renderProfile() {
+        const container = document.getElementById('profileContent');
+        if (!container || !state.user) return;
+        const reviewCount = state.posts.filter(p => p.user_id === state.user.id).length;
+        const likeCount = Object.values(state.votes).filter(v => v === 1).length;
+        container.innerHTML = `
+            <div style="background:var(--bg-elevated);border-radius:24px;padding:24px;text-align:center;margin-bottom:20px">
+                <div style="width:80px;height:80px;background:var(--primary-gradient);border-radius:80px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:2rem">${(state.user.full_name || 'U').charAt(0).toUpperCase()}</div>
+                <h3>${escapeHtml(state.user.full_name)}</h3>
+                <p style="color:var(--text-secondary);font-size:.85rem">${escapeHtml(state.user.email)}</p>
+                <div class="stat-grid" style="margin-top:16px">
+                    <div class="stat-card"><div class="stat-value">${reviewCount}</div><div class="stat-label">Reviews</div></div>
+                    <div class="stat-card"><div class="stat-value">${likeCount}</div><div class="stat-label">Likes</div></div>
+                    <div class="stat-card"><div class="stat-value">${state.shortlist.length}</div><div class="stat-label">Saved</div></div>
+                    <div class="stat-card"><div class="stat-value">${state.activities.length}</div><div class="stat-label">Activities</div></div>
                 </div>
             </div>
+            <div class="settings-section"><h4 style="margin-bottom:16px">Account</h4>
+                <div class="settings-item" onclick="window.editProfile()"><div><div class="settings-label">Edit Profile</div><div class="settings-description">Update your name, email, phone</div></div><i class="fas fa-chevron-right"></i></div>
+                <div class="settings-item" onclick="window.changePassword()"><div><div class="settings-label">Change Password</div><div class="settings-description">Update your password</div></div><i class="fas fa-chevron-right"></i></div>
+            </div>
+            <div class="settings-section"><h4 style="margin-bottom:16px">Legal</h4>
+                <div class="settings-item" onclick="window.showEULA()"><div><div class="settings-label">End User License Agreement</div><div class="settings-description">Read the EULA</div></div><i class="fas fa-chevron-right"></i></div>
+                <div class="settings-item" onclick="window.showTerms()"><div><div class="settings-label">Terms of Service</div><div class="settings-description">Terms and conditions</div></div><i class="fas fa-chevron-right"></i></div>
+                <div class="settings-item" onclick="window.showPrivacy()"><div><div class="settings-label">Privacy Policy</div><div class="settings-description">How we handle your data</div></div><i class="fas fa-chevron-right"></i></div>
+            </div>
+            <div class="settings-section"><h4 style="margin-bottom:16px">About</h4>
+                <div class="settings-item" onclick="window.showAbout()"><div><div class="settings-label">About Lako</div><div class="settings-description">AITE Capstone Project 2026-2027</div></div><i class="fas fa-chevron-right"></i></div>
+                <div class="settings-item" onclick="window.showHelp()"><div><div class="settings-label">Help Center</div><div class="settings-description">FAQs and support</div></div><i class="fas fa-chevron-right"></i></div>
+            </div>
+            <button class="btn-outline" onclick="window.logout()" style="margin-top:20px;margin-bottom:30px"><i class="fas fa-sign-out-alt"></i> Logout</button>
         `;
-        
-        document.getElementById('app').innerHTML = html;
-        
-        startLocationTracking();
-        
-        setTimeout(() => {
-            initMap();
-            renderFeed();
-            renderShortlist();
-            updateNearbyVendors();
-            renderNearbyList();
-        }, 200);
-        
-        // Tab switching
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                document.querySelectorAll('.tab-content-area').forEach(t => t.classList.add('hidden'));
-                document.getElementById(`${btn.dataset.tab}Tab`).classList.remove('hidden');
-                
-                if (btn.dataset.tab === 'map') {
-                    setTimeout(() => {
-                        if (map) map.invalidateSize();
-                        else initMap();
-                    }, 100);
-                }
-                if (btn.dataset.tab === 'nearby') renderNearbyList();
-                if (btn.dataset.tab === 'shortlist') renderShortlist();
-            };
-        });
-        
-        document.getElementById('createPostBtn').onclick = showCreatePostModal;
-        document.getElementById('logoutBtn').onclick = async () => { await logout(); showLanding(); };
-        document.getElementById('centerLocationBtn').onclick = () => {
-            if (currentLocation && map) map.setView([currentLocation.lat, currentLocation.lng], 16);
-        };
-        document.getElementById('refreshMapBtn').onclick = () => initMap();
-        document.getElementById('radiusSlider').oninput = (e) => {
-            userPreferences.radius = parseFloat(e.target.value);
-            document.getElementById('radiusValue').innerText = userPreferences.radius + ' km';
-            renderNearbyList();
-            updateNearbyVendors();
-        };
-        
-        const catDiv = document.getElementById('categoriesFilter');
-        if (catDiv) {
-            catDiv.innerHTML = userPreferences.categories.map(c => 
-                `<span class="menu-chip" onclick="toggleCategory('${c}')" style="${userPreferences.selectedCategories.includes(c) ? 'background:var(--primary); color:white' : ''}">${c}</span>`
-            ).join('');
-        }
-        
-        setupSearch();
-        setupTheme();
     }
+};
+
+let mapInstance = null, routingControl = null, userMarker = null, vendorMarkers = [];
+
+const MapService = {
+    init(center) {
+        if (mapInstance) mapInstance.remove();
+        mapInstance = L.map('map').setView([center.lat, center.lng], 14);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© CartoDB', subdomains: 'abcd', maxZoom: 19 }).addTo(mapInstance);
+    },
+    addUserMarker(lat, lng) {
+        if (userMarker) mapInstance.removeLayer(userMarker);
+        userMarker = L.marker([lat, lng], { icon: L.divIcon({ html: '<div style="background:var(--primary);width:48px;height:48px;border-radius:48px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.3);border:2px solid white"><i class="fas fa-user" style="color:white;font-size:22px"></i></div>', iconSize: [48,48] }) }).addTo(mapInstance).bindPopup('Your location');
+    },
+    addVendorMarkers(vendors) {
+        vendorMarkers.forEach(m => mapInstance.removeLayer(m));
+        vendorMarkers = [];
+        vendors.forEach(v => {
+            if (!v.latitude || !v.longitude) return;
+            const marker = L.marker([v.latitude, v.longitude], { icon: L.divIcon({ html: `<div style="background:var(--primary);width:40px;height:40px;border-radius:40px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);border:2px solid white;cursor:pointer"><i class="fas fa-utensils" style="color:white;font-size:18px"></i><span style="position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:2px 8px;border-radius:20px;font-size:10px;white-space:nowrap">${v.business_name.substring(0,15)}</span></div>`, iconSize: [40,40] }) }).addTo(mapInstance);
+            marker.bindPopup(`<b>${escapeHtml(v.business_name)}</b><br>⭐ ${v.rating||0}/5<br>${escapeHtml(v.address||'')}<br><button onclick="window.showVendorDetail(${v.id})" style="margin-top:6px;background:var(--primary);color:white;border:none;padding:6px 12px;border-radius:20px">View Details</button>`);
+            vendorMarkers.push(marker);
+        });
+    },
+    navigateTo(lat, lng) {
+        if (routingControl) mapInstance.removeControl(routingControl);
+        if (!state.location) return;
+        routingControl = L.Routing.control({
+            waypoints: [L.latLng(state.location.lat, state.location.lng), L.latLng(lat, lng)],
+            routeWhileDragging: false,
+            showAlternatives: true,
+            lineOptions: { styles: [{ color: getComputedStyle(document.body).getPropertyValue('--primary').trim(), weight: 5 }] },
+            router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+            createMarker: () => null
+        }).addTo(mapInstance);
+    },
+    centerOnUser() { if (state.location && mapInstance) mapInstance.setView([state.location.lat, state.location.lng], 16); },
+    invalidateSize() { setTimeout(() => mapInstance?.invalidateSize(), 100); }
+};
+
+function startLocationTracking() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(pos => updateLocation(pos), err => console.log(err), { enableHighAccuracy: true });
+    watchId = navigator.geolocation.watchPosition(updateLocation, err => console.log(err), { enableHighAccuracy: true, maximumAge: 5000 });
+}
+
+function updateLocation(pos) {
+    state.location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    document.getElementById('locationStatus').innerHTML = `<i class="fas fa-satellite-dish"></i> GPS: ${state.location.lat.toFixed(4)}, ${state.location.lng.toFixed(4)}`;
+    if (!mapInstance) {
+        MapService.init(state.location);
+        MapService.addUserMarker(state.location.lat, state.location.lng);
+        MapService.addVendorMarkers(state.vendors);
+    } else {
+        MapService.addUserMarker(state.location.lat, state.location.lng);
+        MapService.centerOnUser();
+    }
+    checkGeofence();
+}
+
+function checkGeofence() {
+    if (!state.settings.notifications.geofence || !state.location) return;
+    state.vendors.forEach(v => {
+        if (!v.latitude || !v.longitude) return;
+        const dist = calcDistance(state.location.lat, state.location.lng, v.latitude, v.longitude);
+        if (dist <= 0.1 && !geofenceAlerts.has(v.id)) {
+            geofenceAlerts.add(v.id);
+            showToast(`${v.business_name} is nearby! Only ${Math.round(dist * 1000)}m away.`);
+            API.createActivity({ activity_type: 'geofence_alert', vendor_id: v.id });
+        }
+    });
+}
+
+function calcDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// ==================== EULA MODAL FUNCTION ====================
+window.showEULA = async () => {
+    if (!eulaData) await API.getEULA();
+    const eula = eulaData || { content: "Loading EULA...", version: "1.0.0" };
     
-    window.toggleCategory = (cat) => {
-        if (userPreferences.selectedCategories.includes(cat)) {
-            userPreferences.selectedCategories = userPreferences.selectedCategories.filter(c => c !== cat);
-        } else {
-            userPreferences.selectedCategories.push(cat);
-        }
-        const catDiv = document.getElementById('categoriesFilter');
-        if (catDiv) {
-            catDiv.innerHTML = userPreferences.categories.map(c => 
-                `<span class="menu-chip" onclick="toggleCategory('${c}')" style="${userPreferences.selectedCategories.includes(c) ? 'background:var(--primary); color:white' : ''}">${c}</span>`
-            ).join('');
-        }
-        renderNearbyList();
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>End User License Agreement</h3>
+                <button class="modal-close">×</button>
+            </div>
+            <div style="padding:20px">
+                <div class="eula-content">
+                    <div style="background:var(--primary-soft);padding:12px;border-radius:12px;margin-bottom:16px">
+                        <strong>🏫 AITE Capstone Project 2026-2027</strong><br>
+                        Developers: Kyle Brian M. Morillo & Alexander Collin Millicamp<br>
+                        Adviser: Prof. Joy Ann De Lima<br>
+                        Version: ${escapeHtml(eula.version)}
+                    </div>
+                    <div style="white-space:pre-wrap;font-size:.85rem;line-height:1.6">${escapeHtml(eula.content)}</div>
+                </div>
+                <div class="flex-row" style="gap:12px;margin-top:16px">
+                    <button id="downloadEulaBtn" class="chip" style="flex:1"><i class="fas fa-download"></i> Download EULA</button>
+                    <button class="btn-primary" onclick="this.closest('.modal-overlay').remove()" style="flex:1">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector('.modal-close').onclick = () => modal.remove();
+    modal.querySelector('#downloadEulaBtn').onclick = () => { window.open(`${API_BASE}/legal/eula/download`, '_blank'); };
+};
+
+// ==================== EULA ACCEPTANCE MODAL (for registration) ====================
+window.showEULAAcceptModal = async (onAccept) => {
+    if (!eulaData) await API.getEULA();
+    const eula = eulaData || { content: "Loading EULA...", version: "1.0.0" };
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-card" style="max-width:550px">
+            <div class="modal-header">
+                <h3>End User License Agreement</h3>
+                <button class="modal-close">×</button>
+            </div>
+            <div style="padding:20px">
+                <div class="eula-content" style="height:350px">
+                    <div style="background:var(--primary-soft);padding:12px;border-radius:12px;margin-bottom:16px">
+                        <strong>🏫 AITE Capstone Project 2026-2027</strong><br>
+                        Developers: Kyle Brian M. Morillo & Alexander Collin Millicamp<br>
+                        Adviser: Prof. Joy Ann De Lima
+                    </div>
+                    <div style="white-space:pre-wrap;font-size:.85rem;line-height:1.6">${escapeHtml(eula.content)}</div>
+                </div>
+                <div class="flex-row" style="gap:12px;margin-top:16px">
+                    <button id="acceptEulaBtn" class="btn-primary" style="flex:1"><i class="fas fa-check"></i> I Accept</button>
+                    <button id="declineEulaBtn" class="btn-outline" style="flex:1"><i class="fas fa-times"></i> Decline</button>
+                </div>
+                <p style="font-size:.7rem;color:var(--text-secondary);margin-top:12px;text-align:center">By accepting, you agree to the terms above. This is a Capstone Project for academic purposes.</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector('.modal-close').onclick = () => { modal.remove(); if (onAccept) onAccept(false); };
+    modal.querySelector('#acceptEulaBtn').onclick = async () => {
+        await API.acceptEULA(eula.version);
+        modal.remove();
+        if (onAccept) onAccept(true);
+    };
+    modal.querySelector('#declineEulaBtn').onclick = () => {
+        modal.remove();
+        if (onAccept) onAccept(false);
+        showToast('You must accept the EULA to continue');
+    };
+};
+
+window.showVendorDetail = async (id) => {
+    const v = state.vendors.find(v => v.id === id);
+    if (!v) return;
+    const isSaved = state.shortlist.some(s => s.id === id);
+    const products = v.products || [];
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `<div class="modal-card"><div class="modal-header"><h3>${escapeHtml(v.business_name)}</h3><button class="modal-close">×</button></div><div style="padding:20px">
+        <p><i class="fas fa-star rating-star"></i> ${v.rating||0}/5 (${v.review_count||0} reviews)</p>
+        <p style="margin-top:12px"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(v.address||'Address pending')}</p>
+        <p><i class="fas fa-tag"></i> ${escapeHtml(v.category||'Street Food')}</p>
+        ${v.hours ? `<p><i class="fas fa-clock"></i> Hours: ${escapeHtml(v.hours)}</p>` : ''}
+        <p>${escapeHtml(v.description||'No description available')}</p>
+        ${products.length ? `<h4 style="margin-top:16px">Products</h4><div class="flex-row" style="gap:8px">${products.slice(0,3).map(p => `<span class="chip">${escapeHtml(p.name)}</span>`).join('')}</div>` : ''}
+        <div class="flex-row" style="gap:12px;margin-top:20px">
+            <button class="chip" onclick="window.navigateToVendor(${v.id});this.closest('.modal-overlay').remove()" style="flex:1"><i class="fas fa-route"></i> Navigate</button>
+            <button class="chip" onclick="window.chatWithVendor(${v.id});this.closest('.modal-overlay').remove()" style="flex:1"><i class="fab fa-facebook-messenger"></i> Chat</button>
+            <button class="chip" onclick="window.requestSampleFromVendor(${v.id});this.closest('.modal-overlay').remove()" style="flex:1"><i class="fas fa-box"></i> Sample</button>
+            <button class="chip" onclick="window.toggleShortlist(${v.id});this.closest('.modal-overlay').remove()" style="flex:1"><i class="fas fa-${isSaved ? 'trash' : 'heart'}"></i> ${isSaved ? 'Remove' : 'Save'}</button>
+        </div>
+    </div></div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('.modal-close').onclick = () => modal.remove();
+    await API.createActivity({ activity_type: 'view', vendor_id: v.id });
+};
+
+window.navigateToVendor = (id) => {
+    const v = state.vendors.find(v => v.id === id);
+    if (v && state.location) {
+        MapService.navigateTo(v.latitude, v.longitude);
+        document.querySelector('[data-tab="map"]').click();
+        setTimeout(() => MapService.invalidateSize(), 100);
+        API.createActivity({ activity_type: 'navigate', vendor_id: v.id });
+    }
+};
+
+window.chatWithVendor = async (id) => {
+    const messenger = await API.getMessengerLink(id);
+    window.open(messenger.messenger_url, '_blank');
+    await API.createActivity({ activity_type: 'chat', vendor_id: id });
+};
+
+window.requestSampleFromVendor = (id) => {
+    const v = state.vendors.find(v => v.id === id);
+    if (!v) return;
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `<div class="modal-card"><div class="modal-header"><h3>Request Sample - ${escapeHtml(v.business_name)}</h3><button class="modal-close">×</button></div><div style="padding:20px">
+        <div class="input-group"><i class="fas fa-box"></i><select id="sampleProduct"><option value="">Select Product</option>${(v.products || []).map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select></div>
+        <div class="input-group"><i class="fas fa-map-marker-alt"></i><input id="sampleLocation" placeholder="Pickup location"></div>
+        <div class="input-group"><i class="fas fa-calendar"></i><input id="sampleDate" type="datetime-local"></div>
+        <div class="input-group"><i class="fas fa-comment"></i><textarea id="sampleMessage" rows="3" placeholder="Additional message..."></textarea></div>
+        <button id="submitSampleBtn" class="btn-primary">Submit Request</button>
+    </div></div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('.modal-close').onclick = () => modal.remove();
+    modal.querySelector('#submitSampleBtn').onclick = async () => {
+        await API.requestSample(id, document.getElementById('sampleProduct').value, document.getElementById('sampleLocation').value, document.getElementById('sampleDate').value);
+        await API.createActivity({ activity_type: 'sample_request', vendor_id: id });
+        modal.remove();
+    };
+};
+
+window.toggleShortlist = async (id) => {
+    const isSaved = state.shortlist.some(s => s.id === id);
+    if (isSaved) await API.removeFromShortlist(id);
+    else await API.addToShortlist(id);
+};
+
+window.removeFromShortlist = async (id) => { await API.removeFromShortlist(id); };
+window.votePost = async (id, type) => { await API.vote(id, type); };
+window.sharePost = () => { if (navigator.share) navigator.share({ title: 'Lako Food Review', text: 'Check out this food review!' }); else alert('Share this post with friends!'); };
+window.showPostDetail = (id) => { const post = state.posts.find(p => p.id === id); if (post) alert(`${post.title}\n\n${post.content}\n\n⭐ ${post.rating}/5\n👤 ${post.author_name}`); };
+window.editProfile = () => { alert('Edit Profile feature coming soon'); };
+window.changePassword = () => { alert('Change Password feature coming soon'); };
+window.showTerms = () => { alert('Terms of Service available at /api/legal/terms'); };
+window.showPrivacy = () => { alert('Privacy Policy available at /api/legal/privacy'); };
+window.showAbout = async () => {
+    if (!projectInfo) await API.getProjectInfo();
+    const info = projectInfo || {
+        name: "Lako - Street Food Discovery & Navigation System",
+        version: "2.1.0",
+        institution: "Asian Institute of Technology and Education (AITE)",
+        academic_year: "2026-2027",
+        developers: [{name: "Kyle Brian M. Morillo", role: "Lead Developer"}, {name: "Alexander Collin Millicamp", role: "Co-Developer"}],
+        adviser: "Prof. Joy Ann De Lima",
+        description: "A mobile application for discovering, navigating, and connecting with street food vendors in Tiaong, Quezon.",
+        features: ["Real-time GPS Navigation", "Vendor Discovery", "Geofencing Alerts", "Community Reviews", "Interactive Maps", "Offline Support", "Messenger Integration", "Sample Requests"]
+    };
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `<div class="modal-card"><div class="modal-header"><h3>About Lako</h3><button class="modal-close">×</button></div><div style="padding:20px">
+        <div class="about-section"><h4>🎓 AITE Capstone Project 2026-2027</h4><p>${escapeHtml(info.description)}</p></div>
+        <div class="about-section"><h4>👨‍💻 Developers</h4>${info.developers.map(d => `<div class="developer-card"><div class="developer-name">${escapeHtml(d.name)}</div><div class="developer-role">${escapeHtml(d.role)}</div></div>`).join('')}<div class="developer-card"><div class="developer-name">👩‍🏫 ${escapeHtml(info.adviser)}</div><div class="developer-role">Capstone Adviser</div></div></div>
+        <div class="about-section"><h4>✨ Features</h4><div class="flex-row" style="gap:8px">${info.features.map(f => `<span class="chip">${escapeHtml(f)}</span>`).join('')}</div></div>
+        <div class="about-section"><h4>📱 Version ${escapeHtml(info.version)}</h4><p>${escapeHtml(info.institution)}<br>Tiaong, Quezon<br>${escapeHtml(info.academic_year)}</p></div>
+    </div></div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('.modal-close').onclick = () => modal.remove();
+};
+window.showHelp = () => { alert('Help Center\n\n📖 FAQ:\n• How to navigate? Tap "Navigate" on any vendor card\n• How to save favorites? Tap the heart icon\n• How to post a review? Go to Feed tab, tap Share\n• Geofence alerts? You\'ll be notified within 100m of vendors\n\n📧 Contact: Prof. Joy Ann De Lima, AITE Tiaong'); };
+window.logout = () => { localStorage.clear(); location.reload(); };
+
+async function showSplash() {
+    document.getElementById('app').innerHTML = `<div class="app-container"><div style="flex:1;display:flex;align-items:center;justify-content:center;background:var(--primary-gradient)"><div style="text-align:center"><i class="fas fa-utensils" style="font-size:4rem;margin-bottom:20px"></i><h1 style="font-size:2.5rem">LAKO</h1><p style="opacity:.9">AITE Capstone Project 2026-2027</p><div class="loader"></div></div></div></div>`;
+    setTimeout(() => showLanding(), 1500);
+}
+
+function showLanding() {
+    document.getElementById('app').innerHTML = `<div class="app-container"><div style="flex:1;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#0f172a,#1e293b)"><div style="max-width:380px;width:100%;background:var(--bg-surface);border-radius:32px;padding:32px 24px;border:1px solid var(--border-light)"><i class="fas fa-utensils" style="font-size:4rem;color:var(--primary);margin-bottom:20px;display:block;text-align:center"></i><h1 style="text-align:center;margin-bottom:8px">LAKO</h1><p style="text-align:center;color:var(--text-secondary);margin-bottom:8px">AITE Capstone Project</p><p style="text-align:center;color:var(--text-secondary);margin-bottom:32px">2026-2027</p><button id="loginBtn" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button><button id="registerBtn" class="btn-outline" style="margin-top:12px"><i class="fas fa-user-plus"></i> Create Account</button></div></div></div>`;
+    document.getElementById('loginBtn').onclick = showLogin;
+    document.getElementById('registerBtn').onclick = showRegister;
+}
+
+function showLogin() {
+    document.getElementById('app').innerHTML = `<div class="app-container"><div style="flex:1;display:flex;align-items:center;justify-content:center;padding:20px"><div style="max-width:380px;width:100%;background:var(--bg-surface);border-radius:32px;padding:32px 24px;border:1px solid var(--border-light)"><h2 style="text-align:center;margin-bottom:24px">Welcome Back</h2><div class="input-group"><i class="fas fa-envelope"></i><input id="loginEmail" placeholder="your@gmail.com"></div><div class="input-group"><i class="fas fa-lock"></i><input id="loginPassword" type="password" placeholder="Password"></div><button id="doLoginBtn" class="btn-primary">Login</button><button id="backBtn" class="btn-outline" style="margin-top:12px">Back</button></div></div></div>`;
+    document.getElementById('doLoginBtn').onclick = async () => { try { await API.login(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value); showMainApp(); } catch(e) { alert(e.message); } };
+    document.getElementById('backBtn').onclick = showLanding;
+}
+
+function showRegister() {
+    document.getElementById('app').innerHTML = `
+        <div class="app-container">
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:20px">
+                <div style="max-width:380px;width:100%;background:var(--bg-surface);border-radius:32px;padding:32px 24px;border:1px solid var(--border-light)">
+                    <h2 style="text-align:center;margin-bottom:24px">Create Account</h2>
+                    <div class="input-group"><i class="fas fa-user"></i><input id="regName" placeholder="Full Name"></div>
+                    <div class="input-group"><i class="fas fa-envelope"></i><input id="regEmail" placeholder="your@gmail.com"></div>
+                    <div class="input-group"><i class="fas fa-phone"></i><input id="regPhone" placeholder="Phone Number"></div>
+                    <div class="input-group"><i class="fas fa-lock"></i><input id="regPass" type="password" placeholder="Password"></div>
+                    <div class="eula-notice">You must accept the EULA to create an account.</div>
+                    <button id="viewEulaBtn" class="btn-outline" style="margin-bottom:16px"><i class="fas fa-file-alt"></i> View EULA</button>
+                    <button id="doRegisterBtn" class="btn-primary" disabled>Sign Up</button>
+                    <button id="backBtn" class="btn-outline" style="margin-top:12px">Back</button>
+                </div>
+            </div>
+        </div>`;
+
+    let eulaAccepted = false;
+    const regBtn = document.getElementById('doRegisterBtn');
+    
+    document.getElementById('viewEulaBtn').onclick = async () => {
+        await window.showEULAAcceptModal((accepted) => {
+            eulaAccepted = accepted;
+            regBtn.disabled = !accepted;
+            if (accepted) showToast('EULA accepted! You can now register.');
+        });
     };
     
-    showSplash();
+    document.getElementById('doRegisterBtn').onclick = async () => {
+        if (!eulaAccepted) { showToast('Please view and accept the EULA first'); return; }
+        try {
+            await API.register({
+                full_name: document.getElementById('regName').value,
+                email: document.getElementById('regEmail').value,
+                phone: document.getElementById('regPhone').value,
+                password: document.getElementById('regPass').value
+            });
+            await API.login(document.getElementById('regEmail').value, document.getElementById('regPass').value);
+            showMainApp();
+        } catch(e) { showToast(e.message); }
+    };
+    document.getElementById('backBtn').onclick = showLanding;
+}
+
+async function showMainApp() {
+    const savedUser = localStorage.getItem('lako_user');
+    if (savedUser) state.user = JSON.parse(savedUser);
+    if (!state.user) { showLanding(); return; }
+    await API.getProjectInfo();
+    await API.loadUserData();
+    
+    document.getElementById('app').innerHTML = `<div class="app-container">
+        <div id="feedPane" class="tab-pane"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h2 style="font-size:1.3rem">Feed</h2><button id="createPostBtn" class="chip" style="background:var(--primary-gradient);color:white"><i class="fas fa-plus"></i> Share</button></div><div id="feedList"></div></div>
+        <div id="mapPane" class="tab-pane hidden" style="padding:0"><div class="map-screen"><div class="map-search-bar"><i class="fas fa-search"></i><input id="mapSearch" placeholder="Search location..."><button id="searchLocationBtn">Go</button></div><div class="map-container"><div id="map"></div></div><div class="map-controls"><button id="centerMapBtn" class="map-btn"><i class="fas fa-location-dot"></i></button><button id="refreshMapBtn" class="map-btn"><i class="fas fa-sync-alt"></i></button></div><div id="locationStatus" class="location-status"><i class="fas fa-spinner fa-pulse"></i> Locating...</div></div></div>
+        <div id="suggestPane" class="tab-pane hidden"><h2 style="font-size:1.3rem;margin-bottom:20px">Suggestions</h2><div id="suggestList"></div></div>
+        <div id="searchPane" class="tab-pane hidden"><div class="search-bar" style="background:var(--bg-card);border-radius:60px;padding:12px 20px;display:flex;gap:12px;margin-bottom:20px"><i class="fas fa-search"></i><input id="globalSearch" placeholder="Search vendors..."><button id="doSearchBtn" style="background:var(--primary);border:none;padding:8px 20px;border-radius:40px;color:white">Search</button></div><div id="searchResults"></div></div>
+        <div id="shortlistPane" class="tab-pane hidden"><h2 style="font-size:1.3rem;margin-bottom:20px">Saved Vendors</h2><div id="shortlistList"></div></div>
+        <div id="activitiesPane" class="tab-pane hidden"><h2 style="font-size:1.3rem;margin-bottom:20px">Activity History</h2><div id="activitiesList"></div></div>
+        <div id="profilePane" class="tab-pane hidden"><div id="profileContent"></div></div>
+        <div class="bottom-nav"><button data-tab="feed" class="nav-item active"><i class="fas fa-newspaper"></i><span>Feed</span></button><button data-tab="map" class="nav-item"><i class="fas fa-map-marked-alt"></i><span>Map</span></button><button data-tab="suggest" class="nav-item"><i class="fas fa-lightbulb"></i><span>Suggest</span></button><button data-tab="search" class="nav-item"><i class="fas fa-search"></i><span>Search</span></button><button data-tab="shortlist" class="nav-item"><i class="fas fa-heart"></i><span>Saved</span></button><button data-tab="activities" class="nav-item"><i class="fas fa-history"></i><span>Activity</span></button><button data-tab="profile" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></button></div>
+    </div>`;
+    
+    startLocationTracking();
+    API.renderAll();
+    
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+            document.getElementById(btn.dataset.tab + 'Pane').classList.remove('hidden');
+            if (btn.dataset.tab === 'map') MapService.invalidateSize();
+            if (btn.dataset.tab === 'suggest') loadSuggestions();
+            if (btn.dataset.tab === 'search') setupSearch();
+        };
+    });
+    
+    document.getElementById('createPostBtn').onclick = () => {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `<div class="modal-card"><div class="modal-header"><h3>Share Your Experience</h3><button class="modal-close">×</button></div><div style="padding:20px"><div class="input-group"><i class="fas fa-store"></i><select id="postVendor"><option value="">Select Vendor</option>${state.vendors.map(v => `<option value="${v.id}">${escapeHtml(v.business_name)}</option>`).join('')}</select></div><div class="input-group"><i class="fas fa-heading"></i><input id="postTitle" placeholder="Title"></div><div class="input-group"><i class="fas fa-star"></i><select id="postRating"><option value="">Rating</option><option value="5">★★★★★</option><option value="4">★★★★☆</option><option value="3">★★★☆☆</option><option value="2">★★☆☆☆</option><option value="1">★☆☆☆☆</option></select></div><div class="input-group"><i class="fas fa-comment"></i><textarea id="postContent" rows="4" placeholder="Share your review..."></textarea></div><button id="submitPostBtn" class="btn-primary">Post Review</button></div></div>`;
+        document.body.appendChild(modal);
+        modal.querySelector('.modal-close').onclick = () => modal.remove();
+        modal.querySelector('#submitPostBtn').onclick = async () => {
+            await API.createPost({ vendor_id: document.getElementById('postVendor').value || null, title: document.getElementById('postTitle').value, rating: document.getElementById('postRating').value || null, content: document.getElementById('postContent').value });
+            modal.remove();
+        };
+    };
+    
+    document.getElementById('centerMapBtn').onclick = () => MapService.centerOnUser();
+    document.getElementById('refreshMapBtn').onclick = () => { MapService.init(state.location); MapService.addUserMarker(state.location.lat, state.location.lng); MapService.addVendorMarkers(state.vendors); };
+    document.getElementById('searchLocationBtn').onclick = async () => {
+        const q = document.getElementById('mapSearch').value;
+        if (!q) return;
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`);
+            const data = await res.json();
+            if (data[0]) mapInstance.setView([parseFloat(data[0].lat), parseFloat(data[0].lon)], 15);
+        } catch(e) { alert('Location not found'); }
+    };
+}
+
+async function loadSuggestions() {
+    const container = document.getElementById('suggestList');
+    const recs = await API.getRecommendations();
+    if (!recs.length) { container.innerHTML = '<div class="empty-state"><i class="fas fa-lightbulb"></i><p>Check back later for suggestions</p></div>'; return; }
+    container.innerHTML = recs.map(v => `<div class="vendor-card" onclick="window.showVendorDetail(${v.id})"><div class="flex-row"><div class="vendor-icon"><i class="fas fa-store"></i></div><div style="flex:1"><div><strong>${escapeHtml(v.business_name)}</strong> <span class="badge-distance">★ ${v.rating||0}</span></div><div style="font-size:.75rem;color:var(--text-secondary)">${escapeHtml(v.category||'Street Food')}</div><div class="flex-row" style="margin-top:8px;gap:8px"><span class="chip" onclick="event.stopPropagation();window.navigateToVendor(${v.id})"><i class="fas fa-route"></i> Navigate</span><span class="chip" onclick="event.stopPropagation();window.chatWithVendor(${v.id})"><i class="fab fa-facebook-messenger"></i> Chat</span></div></div></div></div>`).join('');
+}
+
+function setupSearch() {
+    document.getElementById('doSearchBtn').onclick = () => {
+        const q = document.getElementById('globalSearch').value;
+        if (!q) return;
+        const results = state.vendors.filter(v => v.business_name?.toLowerCase().includes(q.toLowerCase()) || v.category?.toLowerCase().includes(q.toLowerCase()));
+        const container = document.getElementById('searchResults');
+        if (!results.length) { container.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>No vendors found</p></div>'; return; }
+        container.innerHTML = results.map(v => `<div class="vendor-card" onclick="window.showVendorDetail(${v.id})"><div class="flex-row"><div class="vendor-icon"><i class="fas fa-store"></i></div><div style="flex:1"><div><strong>${escapeHtml(v.business_name)}</strong> <span class="badge-distance">★ ${v.rating||0}</span></div><div style="font-size:.75rem;color:var(--text-secondary)">${escapeHtml(v.address||'Location pending')}</div></div></div></div>`).join('');
+    };
+    document.getElementById('globalSearch').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('doSearchBtn').click(); });
+}
+
+const savedUser = localStorage.getItem('lako_user');
+if (savedUser) { state.user = JSON.parse(savedUser); showMainApp(); } else { showSplash(); }
 </script>
 </body>
 </html>
