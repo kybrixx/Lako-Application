@@ -15,8 +15,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
     <style>
-        :root{--primary:#FF6B35;--primary-gradient:linear-gradient(135deg,#FF6B35,#FF8A5C);--primary-soft:rgba(255,107,53,.12);--bg-dark:#0a0a0f;--bg-surface:#14141a;--bg-card:#1c1c24;--bg-elevated:#24242e;--text-primary:#fff;--text-secondary:#9ca3af;--border-light:rgba(255,255,255,.08)}
-        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--primary:#FF6B35;--primary-gradient:linear-gradient(135deg,#FF6B35,#FF8A5C);--primary-soft:rgba(255,107,53,.12);--bg-dark:#0a0a0f;--bg-surface:#14141a;--bg-card:#1c1c24;--bg-elevated:#24242e;--text-primary:#fff;--text-secondary:#9ca3af;--border-light:rgba(255,255,255,.08);--success:#10b981;--danger:#ef4444}
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-dark);overflow:hidden;height:100vh;color:var(--text-primary)}
         #app{width:100%;height:100%;position:relative}
         .app-container{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg-dark);overflow:hidden}
@@ -75,16 +75,30 @@
         .about-section h4{color:var(--primary);margin-bottom:12px}
         .loader{width:40px;height:40px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;margin:20px auto}
         @keyframes spin{to{transform:rotate(360deg)}}
+        .rating-star{color:#fbbf24}
+        .hidden{display:none!important}
+        .toggle-switch{position:relative;display:inline-block;width:48px;height:24px}
+        .toggle-switch input{opacity:0;width:0;height:0}
+        .toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#3f3f46;border-radius:34px;transition:.2s}
+        .toggle-slider:before{position:absolute;content:"";height:20px;width:20px;left:2px;bottom:2px;background-color:#fff;border-radius:50%;transition:.2s}
+        input:checked + .toggle-slider{background-color:var(--primary)}
+        input:checked + .toggle-slider:before{transform:translateX(24px)}
+        @media(max-width:768px){.tab-pane{padding:16px 12px 90px 12px}}
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-track{background:rgba(255,255,255,.05)}
+        ::-webkit-scrollbar-thumb{background:var(--primary);border-radius:4px}
     </style>
 </head>
 <body data-theme="orange">
 <div id="app"></div>
 
 <script>
+// ==================== API CONFIGURATION ====================
 const API_BASE = 'http://localhost:5000/api';
 let projectInfo = null;
 let eulaData = null;
 
+// ==================== APP STATE ====================
 let state = {
     user: null,
     vendors: [],
@@ -106,6 +120,7 @@ let watchId = null;
 let geofenceAlerts = new Set();
 let offlineQueue = [];
 
+// ==================== HELPER FUNCTIONS ====================
 function escapeHtml(str) { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
 function formatRelativeTime(date) {
     const now = new Date();
@@ -127,6 +142,7 @@ function showToast(msg) {
     setTimeout(() => toast.remove(), 5000);
 }
 
+// ==================== API SERVICE ====================
 const API = {
     async request(endpoint, options = {}) {
         const headers = { 'Content-Type': 'application/json', ...options.headers };
@@ -235,6 +251,10 @@ const API = {
     },
     async getMessengerLink(vendorId) { return this.request(`/vendors/${vendorId}/messenger`); },
     async getRecommendations() { return this.request(`/recommendations/user/${state.user.id}`).catch(() => []); },
+    async requestSample(vendorId, productId, location, dateTime) {
+        await this.request('/sample-requests', { method: 'POST', body: JSON.stringify({ vendor_id: vendorId, product_id: productId, location, preferred_date: dateTime }) });
+        showToast('Sample request submitted');
+    },
     renderAll() { this.renderFeed(); this.renderShortlist(); this.renderActivities(); this.renderProfile(); },
     renderFeed() {
         const container = document.getElementById('feedList');
@@ -325,6 +345,15 @@ const API = {
                 <div class="settings-item" onclick="window.editProfile()"><div><div class="settings-label">Edit Profile</div><div class="settings-description">Update your name, email, phone</div></div><i class="fas fa-chevron-right"></i></div>
                 <div class="settings-item" onclick="window.changePassword()"><div><div class="settings-label">Change Password</div><div class="settings-description">Update your password</div></div><i class="fas fa-chevron-right"></i></div>
             </div>
+            <div class="settings-section"><h4 style="margin-bottom:16px">Preferences</h4>
+                <div class="settings-item"><div><div class="settings-label">Theme</div><div class="settings-description">Choose app color theme</div></div><div class="theme-selector" style="display:flex;gap:12px;margin-top:8px"><button class="theme-btn" data-theme="green" style="background:#10b981;width:44px;height:44px;border-radius:44px;border:2px solid transparent;cursor:pointer"></button><button class="theme-btn" data-theme="blue" style="background:#3b82f6;width:44px;height:44px;border-radius:44px;border:2px solid transparent;cursor:pointer"></button><button class="theme-btn" data-theme="purple" style="background:#8b5cf6;width:44px;height:44px;border-radius:44px;border:2px solid transparent;cursor:pointer"></button><button class="theme-btn" data-theme="orange" style="background:#f97316;width:44px;height:44px;border-radius:44px;border:2px solid transparent;cursor:pointer"></button></div></div>
+                <div class="settings-item"><div><div class="settings-label">Discovery Radius</div><div class="settings-description">Maximum distance to show vendors</div></div><div><input type="range" id="radiusSlider" min="1" max="20" value="${state.settings.preferences.radius}" style="width:120px"> <span id="radiusValue">${state.settings.preferences.radius}km</span></div></div>
+                <div class="settings-item" onclick="window.openCategoryPreferences()"><div><div class="settings-label">Food Interests</div><div class="settings-description">Select your preferred food categories</div></div><i class="fas fa-chevron-right"></i></div>
+            </div>
+            <div class="settings-section"><h4 style="margin-bottom:16px">Notifications</h4>
+                <div class="settings-item"><div><div class="settings-label">Push Notifications</div><div class="settings-description">Receive alerts about nearby vendors</div></div><label class="toggle-switch"><input type="checkbox" id="pushNotif" ${state.settings.notifications.push ? 'checked' : ''}><span class="toggle-slider"></span></label></div>
+                <div class="settings-item"><div><div class="settings-label">Geofence Alerts</div><div class="settings-description">Get notified when near a vendor</div></div><label class="toggle-switch"><input type="checkbox" id="geofenceNotif" ${state.settings.notifications.geofence ? 'checked' : ''}><span class="toggle-slider"></span></label></div>
+            </div>
             <div class="settings-section"><h4 style="margin-bottom:16px">Legal</h4>
                 <div class="settings-item" onclick="window.showEULA()"><div><div class="settings-label">End User License Agreement</div><div class="settings-description">Read the EULA</div></div><i class="fas fa-chevron-right"></i></div>
                 <div class="settings-item" onclick="window.showTerms()"><div><div class="settings-label">Terms of Service</div><div class="settings-description">Terms and conditions</div></div><i class="fas fa-chevron-right"></i></div>
@@ -336,9 +365,18 @@ const API = {
             </div>
             <button class="btn-outline" onclick="window.logout()" style="margin-top:20px;margin-bottom:30px"><i class="fas fa-sign-out-alt"></i> Logout</button>
         `;
+        
+        // Theme buttons
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.onclick = () => { document.body.setAttribute('data-theme', btn.dataset.theme); localStorage.setItem('theme', btn.dataset.theme); state.settings.theme = btn.dataset.theme; };
+            if (btn.dataset.theme === state.settings.theme) btn.classList.add('active');
+        });
+        const radiusSlider = document.getElementById('radiusSlider');
+        if (radiusSlider) radiusSlider.oninput = (e) => { state.settings.preferences.radius = parseInt(e.target.value); document.getElementById('radiusValue').innerText = state.settings.preferences.radius + 'km'; };
     }
 };
 
+// ==================== MAP SERVICE ====================
 let mapInstance = null, routingControl = null, userMarker = null, vendorMarkers = [];
 
 const MapService = {
@@ -377,6 +415,7 @@ const MapService = {
     invalidateSize() { setTimeout(() => mapInstance?.invalidateSize(), 100); }
 };
 
+// ==================== LOCATION SERVICE ====================
 function startLocationTracking() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(pos => updateLocation(pos), err => console.log(err), { enableHighAccuracy: true });
@@ -497,6 +536,7 @@ window.showEULAAcceptModal = async (onAccept) => {
     };
 };
 
+// ==================== WINDOW GLOBALS ====================
 window.showVendorDetail = async (id) => {
     const v = state.vendors.find(v => v.id === id);
     if (!v) return;
@@ -572,6 +612,7 @@ window.sharePost = () => { if (navigator.share) navigator.share({ title: 'Lako F
 window.showPostDetail = (id) => { const post = state.posts.find(p => p.id === id); if (post) alert(`${post.title}\n\n${post.content}\n\n⭐ ${post.rating}/5\n👤 ${post.author_name}`); };
 window.editProfile = () => { alert('Edit Profile feature coming soon'); };
 window.changePassword = () => { alert('Change Password feature coming soon'); };
+window.openCategoryPreferences = () => { alert('Select your favorite food categories'); };
 window.showTerms = () => { alert('Terms of Service available at /api/legal/terms'); };
 window.showPrivacy = () => { alert('Privacy Policy available at /api/legal/privacy'); };
 window.showAbout = async () => {
@@ -600,6 +641,7 @@ window.showAbout = async () => {
 window.showHelp = () => { alert('Help Center\n\n📖 FAQ:\n• How to navigate? Tap "Navigate" on any vendor card\n• How to save favorites? Tap the heart icon\n• How to post a review? Go to Feed tab, tap Share\n• Geofence alerts? You\'ll be notified within 100m of vendors\n\n📧 Contact: Prof. Joy Ann De Lima, AITE Tiaong'); };
 window.logout = () => { localStorage.clear(); location.reload(); };
 
+// ==================== AUTH FLOW ====================
 async function showSplash() {
     document.getElementById('app').innerHTML = `<div class="app-container"><div style="flex:1;display:flex;align-items:center;justify-content:center;background:var(--primary-gradient)"><div style="text-align:center"><i class="fas fa-utensils" style="font-size:4rem;margin-bottom:20px"></i><h1 style="font-size:2.5rem">LAKO</h1><p style="opacity:.9">AITE Capstone Project 2026-2027</p><div class="loader"></div></div></div></div>`;
     setTimeout(() => showLanding(), 1500);
