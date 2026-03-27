@@ -1,3 +1,141 @@
+# ============= DEV ADMIN ENDPOINTS =============
+from flask import session
+
+ADMIN_USERNAME = 'admin'
+ADMIN_PASSWORD = 'admin123'
+
+def is_admin():
+    return session.get('admin_authenticated', False)
+
+@app.route('/api/dev/check', methods=['GET'])
+def dev_check():
+    if is_admin():
+        return jsonify({"authenticated": True, "full_name": "Admin", "username": ADMIN_USERNAME, "role": "admin"})
+    return jsonify({"authenticated": False}), 401
+
+@app.route('/api/dev/login', methods=['POST'])
+def dev_login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        session['admin_authenticated'] = True
+        return jsonify({"success": True, "full_name": "Admin", "username": ADMIN_USERNAME, "role": "admin"})
+    return jsonify({"error": "Invalid admin credentials"}), 401
+
+@app.route('/api/dev/logout', methods=['POST'])
+def dev_logout():
+    session.pop('admin_authenticated', None)
+    return jsonify({"success": True})
+
+@app.route('/api/dev/users', methods=['GET'])
+def dev_get_users():
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, full_name, email, created_at FROM users')
+    users = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    for u in users:
+        u['user_type'] = 'user'
+    return jsonify(users)
+
+@app.route('/api/dev/users/<int:user_id>', methods=['DELETE'])
+def dev_delete_user(user_id):
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route('/api/dev/vendors', methods=['GET'])
+def dev_get_vendors():
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM vendors')
+    vendors = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    for v in vendors:
+        v['verification_status'] = 'approved'
+    return jsonify(vendors)
+
+@app.route('/api/dev/vendors/<int:vendor_id>', methods=['DELETE'])
+def dev_delete_vendor(vendor_id):
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM vendors WHERE id = ?', (vendor_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route('/api/dev/posts', methods=['GET'])
+def dev_get_posts():
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT p.*, u.full_name as author_name FROM posts p LEFT JOIN users u ON p.user_id = u.id')
+    posts = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(posts)
+
+@app.route('/api/dev/posts/<int:post_id>', methods=['DELETE'])
+def dev_delete_post(post_id):
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM posts WHERE id = ?', (post_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
+
+@app.route('/api/dev/logs', methods=['GET'])
+def dev_get_logs():
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    logs = []
+    return jsonify(logs)
+
+@app.route('/api/dev/stats', methods=['GET'])
+def dev_get_stats():
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(*) FROM users')
+    total_users = cursor.fetchone()[0]
+    cursor.execute('SELECT COUNT(*) FROM vendors')
+    total_vendors = cursor.fetchone()[0]
+    cursor.execute('SELECT COUNT(*) FROM posts')
+    total_reviews = cursor.fetchone()[0]
+    cursor.execute('SELECT COUNT(*) FROM comments')
+    total_comments = cursor.fetchone()[0]
+    today = datetime.now().date()
+    cursor.execute('SELECT COUNT(*) FROM activities WHERE DATE(created_at) = ?', (today.isoformat(),))
+    today_activity = cursor.fetchone()[0]
+    conn.close()
+    return jsonify({
+        "total_users": total_users,
+        "total_vendors": total_vendors,
+        "total_reviews": total_reviews,
+        "total_comments": total_comments,
+        "today_activity": today_activity
+    })
+
+@app.route('/api/dev/change-password', methods=['POST'])
+def dev_change_password():
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    return jsonify({"success": True})
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import sqlite3
